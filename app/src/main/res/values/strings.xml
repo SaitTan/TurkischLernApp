@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Türkisch Lernen</string>
+    <string name="home_title">Was möchtest du lernen?</string>
+    <string name="words_tile">Wörter lernen</string>
+    <string name="words_tile_subtitle">Bilderkarten</string>
+    <string name="situations_tile">Ich brauche…</string>
+    <string name="situations_tile_subtitle">Sätze für jeden Tag</string>
+    <string name="game_tile">Hörspiel</string>
+    <string name="game_tile_subtitle">Was hörst du?</string>
+    <string name="categories_title">Wähle eine Kategorie</string>
+    <string name="praise">Super gemacht! 🌟</string>
+    <string name="tts_missing_title">Türkisch-Stimme fehlt</string>
+    <string name="tts_missing_message">Damit die App spricht, brauchst du eine türkische Stimme. Öffne die Einstellungen → Sprache &amp; Eingabe → Text-zu-Sprache und installiere „Türkisch (Türkei)".</string>
+    <string name="tts_open_settings">Einstellungen öffnen</string>
+    <string name="tts_dismiss">Später</string>
+    <string name="progress_short">%1$d / %2$d</string>
+    <string name="home_progress">Schon gelernt: %1$d von %2$d</string>
+    <string name="back">Zurück</string>
+    <string name="next_word">Nächstes Wort</string>
+    <string name="known_word_marker">Schon bekannt</string>
+</resources>
