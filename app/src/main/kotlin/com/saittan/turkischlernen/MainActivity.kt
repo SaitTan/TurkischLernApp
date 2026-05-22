@@ -1,7 +1,6 @@
 package com.saittan.turkischlernen
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,19 +72,6 @@ private fun AppRoot() {
             HomeScreen(
                 totalWords = WordRepository.totalWordCount,
                 learnedCount = learnedWords.size.coerceAtMost(WordRepository.totalWordCount),
-                ttsStatus = ttsStatus,
-                onTestVoice = {
-                    val msg = when (ttsStatus) {
-                        TtsStatus.Initializing -> "Stimme wird noch geladen…"
-                        TtsStatus.Ready -> "Test: Merhaba"
-                        TtsStatus.TurkishMissing -> "Türkische Stimme fehlt – siehe Einstellungen"
-                    }
-                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                    audio.speak("Merhaba")
-                    if (ttsStatus == TtsStatus.TurkishMissing) {
-                        dialogDismissed = false
-                    }
-                },
                 onWordsClick = { navController.navigate(Routes.WORD_CATEGORIES) },
                 onSituationsClick = { navController.navigate(Routes.SITUATIONS) },
                 onGameClick = { navController.navigate(Routes.GAME) },
