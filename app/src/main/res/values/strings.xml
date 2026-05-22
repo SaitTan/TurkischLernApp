@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Türkisch Lernen</string>
+    <string name="home_title">Was möchtest du lernen?</string>
+    <string name="words_tile">Wörter lernen</string>
+    <string name="words_tile_subtitle">Bilderkarten</string>
+    <string name="situations_tile">Ich brauche…</string>
+    <string name="situations_tile_subtitle">Sätze für jeden Tag</string>
+    <string name="categories_title">Wähle eine Kategorie</string>
+    <string name="praise">Super gemacht! 🌟</string>
+    <string name="tts_missing_title">Türkisch-Stimme fehlt</string>
+    <string name="tts_missing_message">Bitte installiere in den Android-Einstellungen unter „Sprache und Eingabe → Text-zu-Sprache" eine türkische Stimme (tr-TR).</string>
+    <string name="back">Zurück</string>
+    <string name="next_word">Nächstes Wort</string>
+    <string name="known_word_marker">Schon bekannt</string>
+</resources>
