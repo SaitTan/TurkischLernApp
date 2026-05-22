@@ -9,7 +9,11 @@
     <string name="categories_title">Wähle eine Kategorie</string>
     <string name="praise">Super gemacht! 🌟</string>
     <string name="tts_missing_title">Türkisch-Stimme fehlt</string>
-    <string name="tts_missing_message">Bitte installiere in den Android-Einstellungen unter „Sprache und Eingabe → Text-zu-Sprache" eine türkische Stimme (tr-TR).</string>
+    <string name="tts_missing_message">Damit die App spricht, brauchst du eine türkische Stimme. Öffne die Einstellungen → Sprache &amp; Eingabe → Text-zu-Sprache und installiere „Türkisch (Türkei)".</string>
+    <string name="tts_open_settings">Einstellungen öffnen</string>
+    <string name="tts_dismiss">Später</string>
+    <string name="progress_short">%1$d / %2$d</string>
+    <string name="home_progress">Schon gelernt: %1$d von %2$d</string>
     <string name="back">Zurück</string>
     <string name="next_word">Nächstes Wort</string>
     <string name="known_word_marker">Schon bekannt</string>

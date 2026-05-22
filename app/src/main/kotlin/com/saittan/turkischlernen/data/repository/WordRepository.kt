@@ -70,4 +70,6 @@ object WordRepository {
     )
 
     fun categoryById(id: String): Category? = categories.firstOrNull { it.id == id }
+
+    val totalWordCount: Int = categories.sumOf { it.words.size }
 }

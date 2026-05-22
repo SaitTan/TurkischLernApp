@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -68,9 +68,15 @@ private enum class AnswerState { Idle, Correct, Wrong }
 fun WordLearningScreen(
     category: Category,
     audio: AudioManager,
+    learnedWords: Set<String>,
+    onCorrect: (Word) -> Unit,
     onBack: () -> Unit,
 ) {
     val words = category.words
+    val learnedInCategory: (Word) -> Boolean = { word ->
+        com.saittan.turkischlernen.data.repository.ProgressRepository
+            .token(category.id, word.turkish) in learnedWords
+    }
     var currentIndex by remember { mutableIntStateOf(0) }
     val currentWord = words[currentIndex]
     val options = remember(currentIndex) { buildOptions(currentWord, words) }
@@ -93,7 +99,7 @@ fun WordLearningScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.statusBars)
+                .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 16.dp),
         ) {
             BackBar(title = category.nameDe, onBack = onBack)
@@ -137,7 +143,7 @@ fun WordLearningScreen(
                             contentDescription = currentWord.german,
                             modifier = Modifier.fillMaxSize(),
                         )
-                        if (currentWord.known) {
+                        if (currentWord.known || learnedInCategory(currentWord)) {
                             Icon(
                                 imageVector = Icons.Filled.Star,
                                 contentDescription = null,
@@ -183,6 +189,7 @@ fun WordLearningScreen(
                             pickedOption = option
                             if (option == currentWord.turkish) {
                                 answerState = AnswerState.Correct
+                                onCorrect(currentWord)
                                 audio.speak(currentWord.turkish, currentWord.audioResId)
                             } else {
                                 answerState = AnswerState.Wrong

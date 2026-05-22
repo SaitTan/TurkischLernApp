@@ -5,7 +5,12 @@ import android.media.MediaPlayer
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.annotation.RawRes
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.Locale
+
+enum class TtsStatus { Initializing, Ready, TurkishMissing }
 
 /**
  * Spielt Audio ab. Bevorzugt vorgefertigte MP3/OGG-Dateien aus res/raw;
@@ -17,17 +22,21 @@ class AudioManager(context: Context) {
     private var mediaPlayer: MediaPlayer? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
-    private var turkishAvailable = false
+
+    private val _status = MutableStateFlow(TtsStatus.Initializing)
+    val status: StateFlow<TtsStatus> = _status.asStateFlow()
 
     init {
-        tts = TextToSpeech(appContext) { status ->
-            if (status == TextToSpeech.SUCCESS) {
+        tts = TextToSpeech(appContext) { initStatus ->
+            if (initStatus == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale("tr", "TR"))
-                turkishAvailable = result != TextToSpeech.LANG_MISSING_DATA &&
+                val turkishOk = result != TextToSpeech.LANG_MISSING_DATA &&
                     result != TextToSpeech.LANG_NOT_SUPPORTED
                 ttsReady = true
+                _status.value = if (turkishOk) TtsStatus.Ready else TtsStatus.TurkishMissing
             } else {
-                Log.w(TAG, "TTS init failed: $status")
+                Log.w(TAG, "TTS init failed: $initStatus")
+                _status.value = TtsStatus.TurkishMissing
             }
         }
     }
@@ -43,8 +52,6 @@ class AudioManager(context: Context) {
         }
         speakTts(text)
     }
-
-    fun isTurkishVoiceAvailable(): Boolean = ttsReady && turkishAvailable
 
     private fun speakTts(text: String) {
         val engine = tts ?: return
