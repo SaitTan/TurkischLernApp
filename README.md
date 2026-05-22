@@ -6,10 +6,15 @@ vorauszusetzen.
 
 Phase 1 enthält zwei Bereiche:
 
-- **Wörter lernen** – Multiple-Choice-Quiz mit Bildkarten in fünf Kategorien
-  (Essen, Tiere, Natur, Zuhause, Farben), je 5 Wörter.
+- **Wörter lernen** – Multiple-Choice-Quiz mit Bildkarten in neun Kategorien
+  (Essen, Tiere, Natur, Zuhause, Farben, Zahlen, Körper, Familie, Kleidung),
+  je 10 Wörter – insgesamt 90 Wörter.
 - **Ich brauche…** – 10 Alltagskarten, die beim Antippen den türkischen Satz
   vorlesen.
+
+Der Lernfortschritt wird lokal in DataStore gespeichert: jedes richtig
+beantwortete Wort bekommt einen ⭐, die Kategorie-Kachel zeigt „x / 10" und
+das Hauptmenü den Gesamtstand „Schon gelernt: X von 90".
 
 Audio wird über Android **Text-to-Speech** (`tr-TR`) erzeugt. Vorgefertigte
 MP3/OGG-Dateien können später in `app/src/main/res/raw/` abgelegt werden – der
