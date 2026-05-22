@@ -27,15 +27,25 @@ class AudioManager(context: Context) {
     val status: StateFlow<TtsStatus> = _status.asStateFlow()
 
     init {
+        Log.d(TAG, "TTS: starting init…")
         tts = TextToSpeech(appContext) { initStatus ->
+            Log.d(TAG, "TTS init callback: status=$initStatus (SUCCESS=${TextToSpeech.SUCCESS})")
             if (initStatus == TextToSpeech.SUCCESS) {
-                val result = tts?.setLanguage(Locale("tr", "TR"))
-                val turkishOk = result != TextToSpeech.LANG_MISSING_DATA &&
+                val engine = tts
+                val available = engine?.availableLanguages?.joinToString { "${it.language}_${it.country}" }
+                Log.d(TAG, "TTS engine default: ${engine?.defaultEngine}, available locales: $available")
+                val result = engine?.setLanguage(Locale("tr", "TR"))
+                Log.d(TAG, "TTS setLanguage(tr_TR) returned: $result " +
+                    "(MISSING=${TextToSpeech.LANG_MISSING_DATA}, NOT_SUPPORTED=${TextToSpeech.LANG_NOT_SUPPORTED}, " +
+                    "AVAILABLE=${TextToSpeech.LANG_AVAILABLE})")
+                val turkishOk = result != null &&
+                    result != TextToSpeech.LANG_MISSING_DATA &&
                     result != TextToSpeech.LANG_NOT_SUPPORTED
                 ttsReady = true
                 _status.value = if (turkishOk) TtsStatus.Ready else TtsStatus.TurkishMissing
+                Log.d(TAG, "TTS final status: ${_status.value}")
             } else {
-                Log.w(TAG, "TTS init failed: $initStatus")
+                Log.w(TAG, "TTS init failed (no engine?): $initStatus")
                 _status.value = TtsStatus.TurkishMissing
             }
         }
@@ -54,10 +64,18 @@ class AudioManager(context: Context) {
     }
 
     private fun speakTts(text: String) {
-        val engine = tts ?: return
-        if (!ttsReady) return
+        val engine = tts
+        if (engine == null) {
+            Log.w(TAG, "speak('$text'): TTS engine is null")
+            return
+        }
+        if (!ttsReady) {
+            Log.w(TAG, "speak('$text'): TTS not ready yet (status=${_status.value})")
+            return
+        }
         engine.stop()
-        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, text)
+        val result = engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, text)
+        Log.d(TAG, "speak('$text') returned $result (SUCCESS=${TextToSpeech.SUCCESS})")
     }
 
     private fun playRaw(@RawRes audioResId: Int) {

@@ -32,11 +32,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.saittan.turkischlernen.R
+import com.saittan.turkischlernen.audio.TtsStatus
+import com.saittan.turkischlernen.ui.components.TtsStatusChip
 
 @Composable
 fun HomeScreen(
     totalWords: Int,
     learnedCount: Int,
+    ttsStatus: TtsStatus,
+    onTestVoice: () -> Unit,
     onWordsClick: () -> Unit,
     onSituationsClick: () -> Unit,
     onGameClick: () -> Unit,
@@ -68,7 +72,9 @@ fun HomeScreen(
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.secondary,
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
+        TtsStatusChip(status = ttsStatus, onTest = onTestVoice)
+        Spacer(Modifier.height(16.dp))
 
         HomeTile(
             iconResId = R.drawable.openmoji_food_cat,
