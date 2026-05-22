@@ -6,6 +6,8 @@
     <string name="words_tile_subtitle">Bilderkarten</string>
     <string name="situations_tile">Ich brauche…</string>
     <string name="situations_tile_subtitle">Sätze für jeden Tag</string>
+    <string name="game_tile">Hörspiel</string>
+    <string name="game_tile_subtitle">Was hörst du?</string>
     <string name="categories_title">Wähle eine Kategorie</string>
     <string name="praise">Super gemacht! 🌟</string>
     <string name="tts_missing_title">Türkisch-Stimme fehlt</string>

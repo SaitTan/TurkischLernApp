@@ -25,6 +25,7 @@ import com.saittan.turkischlernen.data.repository.ProgressRepository
 import com.saittan.turkischlernen.data.repository.WordRepository
 import com.saittan.turkischlernen.ui.components.TtsMissingDialog
 import com.saittan.turkischlernen.ui.screens.HomeScreen
+import com.saittan.turkischlernen.ui.screens.ListeningGameScreen
 import com.saittan.turkischlernen.ui.screens.SituationsScreen
 import com.saittan.turkischlernen.ui.screens.WordCategoriesScreen
 import com.saittan.turkischlernen.ui.screens.WordLearningScreen
@@ -73,6 +74,7 @@ private fun AppRoot() {
                 learnedCount = learnedWords.size.coerceAtMost(WordRepository.totalWordCount),
                 onWordsClick = { navController.navigate(Routes.WORD_CATEGORIES) },
                 onSituationsClick = { navController.navigate(Routes.SITUATIONS) },
+                onGameClick = { navController.navigate(Routes.GAME) },
             )
         }
         composable(Routes.WORD_CATEGORIES) {
@@ -106,6 +108,12 @@ private fun AppRoot() {
                 onBack = { navController.popBackStack() },
             )
         }
+        composable(Routes.GAME) {
+            ListeningGameScreen(
+                audio = audio,
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
 }
 
@@ -114,4 +122,5 @@ private object Routes {
     const val WORD_CATEGORIES = "words"
     const val WORD_LEARNING = "wordsLearning"
     const val SITUATIONS = "situations"
+    const val GAME = "game"
 }

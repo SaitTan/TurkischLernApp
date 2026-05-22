@@ -237,7 +237,7 @@ fun WordLearningScreen(
                         maxSpeed = 30f,
                         damping = 0.9f,
                         spread = 360,
-                        colors = listOf(0xfce18a, 0xff726d, 0xf4306d, 0xb48def).map { it.toInt() },
+                        colors = listOf(0xFFFCE18A.toInt(), 0xFFFF726D.toInt(), 0xFFF4306D.toInt(), 0xFFB48DEF.toInt()),
                         emitter = Emitter(duration = 600, TimeUnit.MILLISECONDS).max(120),
                         position = Position.Relative(0.5, 0.3),
                     )

@@ -18,8 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -50,7 +50,7 @@ fun SituationsScreen(
     audio: AudioManager,
     onBack: () -> Unit,
 ) {
-    val situations = SituationRepository.situations
+    val grouped = remember { SituationRepository.grouped }
     var selectedSentence by remember { mutableStateOf<String?>(null) }
 
     Column(
@@ -72,7 +72,7 @@ fun SituationsScreen(
                     .padding(vertical = 8.dp),
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -80,14 +80,25 @@ fun SituationsScreen(
             contentPadding = PaddingValues(bottom = 24.dp),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            items(situations) { situation ->
-                SituationCard(
-                    situation = situation,
-                    onClick = {
-                        selectedSentence = situation.turkishSentence
-                        audio.speak(situation.turkishSentence, situation.audioResId)
-                    },
-                )
+            grouped.forEach { (section, sectionItems) ->
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        text = section.titleDe,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+                    )
+                }
+                items(sectionItems.size) { index ->
+                    val situation = sectionItems[index]
+                    SituationCard(
+                        situation = situation,
+                        onClick = {
+                            selectedSentence = situation.turkishSentence
+                            audio.speak(situation.turkishSentence, situation.audioResId)
+                        },
+                    )
+                }
             }
         }
     }
