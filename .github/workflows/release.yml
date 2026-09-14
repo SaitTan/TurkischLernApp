@@ -1,0 +1,92 @@
+name: Release APK
+
+# Erzeugt ein GitHub-Release mit fertiger APK zum direkten Download aufs Handy.
+# Auslöser: ein Versions-Tag (z. B. v1.0.0) oder manueller Start.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Versions-Tag für das Release (z. B. v1.0.1)"
+        required: true
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: APK bauen & veröffentlichen
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK vorbereiten
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-35" "build-tools;35.0.0" > /dev/null
+
+      - name: Tests
+        run: ./gradlew test --stacktrace
+
+      - name: APKs bauen
+        run: ./gradlew assembleRelease assembleDebug --stacktrace
+
+      - name: APKs benennen
+        id: apks
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          mkdir -p dist
+          cp app/build/outputs/apk/release/app-release.apk "dist/TuerkischLernen-$TAG.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "dist/TuerkischLernen-$TAG-debug.apk"
+          ls -la dist
+
+      - name: Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.apks.outputs.tag }}"
+          cat > notes.md <<'NOTES'
+          ## 📱 Türkisch lernen – Installation
+
+          1. Unten bei **Assets** die Datei `TuerkischLernen-…​.apk` **auf dem Handy** herunterladen
+          2. Datei antippen → Android fragt nach der Erlaubnis „Unbekannte Apps installieren" → erlauben
+          3. **Installieren** antippen – fertig
+
+          ### Wichtig nach der Installation
+          Damit die App türkisch spricht, müssen einmalig die Sprachdaten da sein:
+          **Profil → Eltern-Bereich → „Türkische Sprachdaten installieren"**
+          (oder: Einstellungen → System → Sprachen & Eingabe → Text-in-Sprache → Türkisch)
+
+          ### Inhalt
+          - Lernpfad mit 9 Einheiten, 47 Lektionen, 102 Wörtern & Sätzen
+          - 5 Aufgabentypen: Bild → Wort, Bedeutung, Hörverstehen, Satz bauen, Paare finden
+          - XP, Tagesziel, Serie, Herzen, Abzeichen, Konfetti
+          - Bereich „Ich brauche …" mit 16 Alltagskarten zum Vorlesen
+          - Wiederholen mit Wörterliste, Profil mit Eltern-Bereich
+          - Komplett offline, ohne Login, ohne Werbung
+
+          Die Datei mit `-debug` im Namen ist die Entwicklerversion; für den normalen
+          Gebrauch die APK **ohne** `-debug` nehmen.
+
+          > Hinweis: Die APK ist mit dem Debug-Schlüssel signiert (kein Play-Store-Zertifikat).
+          > Deshalb fragt Android beim Installieren nach der Erlaubnis für unbekannte Quellen.
+          NOTES
+
+          gh release create "$TAG" \
+            --title "Türkisch lernen $TAG" \
+            --notes-file notes.md \
+            dist/*.apk
