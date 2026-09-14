@@ -5,6 +5,9 @@ name: Release APK
 on:
   push:
     tags: ["v*"]
+  # Wird auch ausgelöst, wenn das Release über die GitHub-Oberfläche angelegt wird.
+  release:
+    types: [published, created]
   workflow_dispatch:
     inputs:
       tag:
@@ -47,7 +50,7 @@ jobs:
       - name: APKs benennen
         id: apks
         run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          TAG="${{ github.event.inputs.tag || github.event.release.tag_name || github.ref_name }}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/TuerkischLernen-$TAG.apk"
@@ -86,7 +89,13 @@ jobs:
           > Deshalb fragt Android beim Installieren nach der Erlaubnis für unbekannte Quellen.
           NOTES
 
-          gh release create "$TAG" \
-            --title "Türkisch lernen $TAG" \
-            --notes-file notes.md \
-            dist/*.apk
+          # Release anlegen – oder die APKs an ein bereits vorhandenes Release hängen.
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.apk --clobber
+            gh release edit "$TAG" --title "Türkisch lernen $TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" \
+              --title "Türkisch lernen $TAG" \
+              --notes-file notes.md \
+              dist/*.apk
+          fi
