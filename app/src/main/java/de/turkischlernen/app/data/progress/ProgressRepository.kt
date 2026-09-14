@@ -70,9 +70,13 @@ class ProgressRepository(context: Context) {
         )
     }
 
-    /** Wird nach jeder abgeschlossenen Lektion aufgerufen. */
+    /**
+     * Wird nach jeder abgeschlossenen Runde aufgerufen.
+     * [lessonId] ist null bei einer freien Wiederholungs-Session – diese zählt
+     * für XP und Serie, gilt aber nicht als abgeschlossene Lektion.
+     */
     suspend fun completeLesson(
-        lessonId: String,
+        lessonId: String?,
         earnedXp: Int,
         mistakes: Int,
         practicedItemIds: List<String>,
@@ -87,11 +91,13 @@ class ProgressRepository(context: Context) {
             prefs[Keys.xpToday] = ProgressLogic.nextXpToday(lastActive, xpToday, earnedXp, today)
             prefs[Keys.streak] = ProgressLogic.nextStreak(lastActive, streak, today)
             prefs[Keys.lastActive] = today.toString()
-            prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
             prefs[Keys.learned] = (prefs[Keys.learned] ?: emptySet()) + practicedItemIds
             prefs[Keys.runs] = (prefs[Keys.runs] ?: 0) + 1
-            if (mistakes == 0) {
-                prefs[Keys.perfect] = (prefs[Keys.perfect] ?: emptySet()) + lessonId
+            if (lessonId != null) {
+                prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
+                if (mistakes == 0) {
+                    prefs[Keys.perfect] = (prefs[Keys.perfect] ?: emptySet()) + lessonId
+                }
             }
         }
     }

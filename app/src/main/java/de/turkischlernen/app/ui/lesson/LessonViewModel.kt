@@ -57,6 +57,9 @@ class LessonViewModel(
     /** Aufgaben, die wegen eines Fehlers erneut kommen. */
     private val repeatQueue = mutableListOf<Exercise>()
 
+    /** Vokabeln dieser Runde – werden am Ende als "gelernt" gespeichert. */
+    private val practicedIds: List<String> = practiceItemIds
+
     val isPractice: Boolean = lesson == null
 
     val title: String = lesson?.title ?: "Wiederholen"
@@ -128,10 +131,11 @@ class LessonViewModel(
         sounds.celebrate()
         viewModelScope.launch {
             repository.completeLesson(
-                lessonId = lessonId,
+                // Freies Wiederholen zählt nicht als abgeschlossene Lektion.
+                lessonId = lesson?.id,
                 earnedXp = earnedXp,
                 mistakes = mistakes,
-                practicedItemIds = lesson?.itemIds ?: emptyList()
+                practicedItemIds = lesson?.itemIds ?: practicedIds
             )
         }
     }
