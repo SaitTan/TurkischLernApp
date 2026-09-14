@@ -1,0 +1,15 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Mondsichel -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M48,54m-22,0a22,22 0 1,0 44,0a22,22 0 1,0 -44,0M56,54m-18,0a18,18 0 1,0 36,0a18,18 0 1,0 -36,0" />
+    <!-- Stern -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M76,38 L79,47 L88,50 L79,53 L76,62 L73,53 L64,50 L73,47 Z" />
+</vector>
