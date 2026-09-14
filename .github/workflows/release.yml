@@ -65,7 +65,7 @@ jobs:
           cat > notes.md <<'NOTES'
           ## 📱 Türkisch lernen – Installation
 
-          1. Unten bei **Assets** die Datei `TuerkischLernen-…​.apk` **auf dem Handy** herunterladen
+          1. Unten bei **Assets** die APK-Datei (ohne `-debug` im Namen) **auf dem Handy** herunterladen
           2. Datei antippen → Android fragt nach der Erlaubnis „Unbekannte Apps installieren" → erlauben
           3. **Installieren** antippen – fertig
 
