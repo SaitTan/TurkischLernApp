@@ -1,96 +1,72 @@
 package de.turkischlernen.app.audio
 
+import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioTrack
-import java.util.concurrent.Executors
-import kotlin.math.PI
-import kotlin.math.exp
-import kotlin.math.sin
+import android.media.SoundPool
+import androidx.annotation.RawRes
+import de.turkischlernen.app.R
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Kurze Feedback-Töne (richtig / falsch / Lektion geschafft).
- *
- * Die Töne werden zur Laufzeit berechnet – dadurch braucht die App keine
- * Audiodateien und bleibt klein und vollständig offline.
+ * Feedback-Sounds (CC0 von Kenney, siehe LICENSES.md). Lädt alle Sounds beim
+ * Start vor, damit sie ohne Verzögerung klingen. Nicht geladene Sounds bleiben still.
  */
-class SoundPlayer {
+class SoundPlayer(context: Context, private val enabled: () -> Boolean) {
 
-    private val executor = Executors.newSingleThreadExecutor()
+    private enum class Sound(@RawRes val res: Int) {
+        TAP(R.raw.sfx_tap),
+        CORRECT(R.raw.sfx_correct),
+        WRONG(R.raw.sfx_wrong),
+        COMBO(R.raw.sfx_combo),
+        XP_TICK(R.raw.sfx_xp_tick),
+        CELEBRATE(R.raw.sfx_celebrate),
+        BADGE(R.raw.sfx_badge),
+        STREAK(R.raw.sfx_streak)
+    }
 
-    /** Fröhlicher Dreiklang bei einer richtigen Antwort. */
-    fun correct() = play(listOf(Tone(660f, 90), Tone(880f, 90), Tone(1320f, 200)))
-
-    /** Weicher, tiefer Ton bei einer falschen Antwort – bewusst nicht "böse". */
-    fun wrong() = play(listOf(Tone(330f, 120), Tone(247f, 220)))
-
-    /** Kleine Fanfare am Ende einer Lektion. */
-    fun celebrate() = play(
-        listOf(
-            Tone(523f, 110), Tone(659f, 110), Tone(784f, 110),
-            Tone(1047f, 320)
+    private val pool: SoundPool = SoundPool.Builder()
+        .setMaxStreams(4)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
         )
-    )
+        .build()
 
-    /** Leises Tippgeräusch. */
-    fun tap() = play(listOf(Tone(880f, 45, volume = 0.25f)))
+    private val loaded: MutableSet<Int> = ConcurrentHashMap.newKeySet()
 
-    private data class Tone(val frequencyHz: Float, val durationMs: Int, val volume: Float = 0.6f)
-
-    private fun play(tones: List<Tone>) {
-        executor.execute {
-            runCatching {
-                val samples = render(tones)
-                val track = AudioTrack.Builder()
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_MEDIA)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
-                    .setAudioFormat(
-                        AudioFormat.Builder()
-                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                            .setSampleRate(SAMPLE_RATE)
-                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
-                            .build()
-                    )
-                    .setBufferSizeInBytes(samples.size * 2)
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .build()
-
-                track.play()
-                track.write(samples, 0, samples.size)
-                track.stop()
-                track.release()
-            }
+    init {
+        // Listener vor dem Laden setzen, sonst gehen Meldungen verloren.
+        pool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (status == 0) loaded += sampleId
         }
     }
 
-    private fun render(tones: List<Tone>): ShortArray {
-        val total = tones.sumOf { (SAMPLE_RATE * it.durationMs / 1000.0).toInt() }
-        val out = ShortArray(total)
-        var offset = 0
-        tones.forEach { tone ->
-            val count = (SAMPLE_RATE * tone.durationMs / 1000.0).toInt()
-            for (i in 0 until count) {
-                val t = i.toDouble() / SAMPLE_RATE
-                // Weiche Hüllkurve, damit es nicht knackt.
-                val attack = (i / (SAMPLE_RATE * 0.01)).coerceAtMost(1.0)
-                val decay = exp(-3.0 * i / count)
-                val value = sin(2.0 * PI * tone.frequencyHz * t) * attack * decay * tone.volume
-                out[offset + i] = (value * Short.MAX_VALUE).toInt().toShort()
-            }
-            offset += count
-        }
-        return out
+    private val sampleIds: Map<Sound, Int> = Sound.entries.associateWith { sound ->
+        runCatching { pool.load(context, sound.res, 1) }.getOrDefault(0)
+    }
+
+    fun tap() = play(Sound.TAP, volume = 0.5f)
+    fun correct() = play(Sound.CORRECT)
+    fun wrong() = play(Sound.WRONG)
+
+    /** Combo-Ton – je höher die Stufe (1..5), desto höher der Klang. */
+    fun combo(level: Int) = play(Sound.COMBO, rate = 1f + 0.1f * (level - 1).coerceIn(0, 4))
+
+    fun xpTick() = play(Sound.XP_TICK, volume = 0.6f)
+    fun celebrate() = play(Sound.CELEBRATE)
+    fun badge() = play(Sound.BADGE)
+    fun streak() = play(Sound.STREAK)
+
+    private fun play(sound: Sound, volume: Float = 1f, rate: Float = 1f) {
+        if (!enabled()) return
+        val id = sampleIds[sound] ?: return
+        if (id !in loaded) return
+        runCatching { pool.play(id, volume, volume, 1, 0, rate) }
     }
 
     fun release() {
-        executor.shutdown()
-    }
-
-    private companion object {
-        const val SAMPLE_RATE = 22050
+        pool.release()
     }
 }
