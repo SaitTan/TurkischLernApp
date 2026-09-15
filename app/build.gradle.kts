@@ -16,6 +16,21 @@ android {
         versionName = "1.0"
     }
 
+    // Fester Schlüssel aus Umgebungsvariablen (GitHub-Secrets). Nur so behalten
+    // Updates auf dem Handy den Lernfortschritt – jeder Debug-Schlüssel ist anders.
+    val releaseStoreFile = System.getenv("SIGNING_STORE_FILE")
+
+    signingConfigs {
+        create("release") {
+            if (releaseStoreFile != null) {
+                storeFile = file(releaseStoreFile)
+                storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -28,8 +43,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Damit auch ohne eigenen Keystore eine installierbare APK entsteht.
-            signingConfig = signingConfigs.getByName("debug")
+            // Ohne Secret (z. B. lokal oder in Fork-PRs) entsteht trotzdem eine installierbare APK.
+            signingConfig = if (releaseStoreFile != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
