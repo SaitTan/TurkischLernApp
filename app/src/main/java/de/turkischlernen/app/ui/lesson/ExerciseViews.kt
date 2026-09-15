@@ -1,9 +1,11 @@
 package de.turkischlernen.app.ui.lesson
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,9 +37,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.model.LearnItem
 import de.turkischlernen.app.ui.components.ItemIllustration
+import de.turkischlernen.app.ui.components.bounce
+import de.turkischlernen.app.ui.components.pressScale
+import de.turkischlernen.app.ui.components.shake
 import de.turkischlernen.app.ui.theme.AppColors
 
 /** Farbzustand einer Antwortkachel. */
@@ -50,6 +57,20 @@ fun OptionCard(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
+    val sounds = LocalAppContainer.current.sounds
+    val interactionSource = remember { MutableInteractionSource() }
+
+    // Wechsel auf richtig/falsch löst Hüpfen bzw. Wackeln aus.
+    var shakeTrigger by remember { mutableIntStateOf(0) }
+    var bounceTrigger by remember { mutableIntStateOf(0) }
+    LaunchedEffect(status) {
+        when (status) {
+            OptionStatus.WRONG -> shakeTrigger++
+            OptionStatus.CORRECT -> bounceTrigger++
+            else -> Unit
+        }
+    }
+
     val border = when (status) {
         OptionStatus.NORMAL -> MaterialTheme.colorScheme.outline
         OptionStatus.SELECTED -> AppColors.Blue
@@ -72,11 +93,21 @@ fun OptionCard(
     Box(
         modifier
             .fillMaxWidth()
+            .shake(shakeTrigger)
+            .bounce(bounceTrigger)
+            .pressScale(interactionSource)
             .heightIn(min = 62.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(fill)
             .border(2.dp, border, RoundedCornerShape(16.dp))
-            .clickable(enabled = enabled) { onClick() }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                enabled = enabled
+            ) {
+                sounds.tap()
+                onClick()
+            }
             .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -257,7 +288,7 @@ private fun OptionList(
     }
 }
 
-/** Satz aus Wortkacheln bauen. */
+/** Satz aus Wortkacheln bauen. [wrong] = Antwort wurde als falsch gewertet. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WordBankView(
@@ -265,8 +296,17 @@ fun WordBankView(
     interaction: ExerciseInteraction,
     locked: Boolean,
     onSpeak: (String, Boolean) -> Unit,
+    wrong: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    var rowShake by remember(exercise) { mutableIntStateOf(0) }
+    var rowBounce by remember(exercise) { mutableIntStateOf(0) }
+    LaunchedEffect(locked, wrong) {
+        if (locked) {
+            if (wrong) rowShake++ else rowBounce++
+        }
+    }
+
     Column(modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(exercise.target.emoji, fontSize = 40.sp)
@@ -283,6 +323,8 @@ fun WordBankView(
         Box(
             Modifier
                 .fillMaxWidth()
+                .shake(rowShake)
+                .bounce(rowBounce)
                 .heightIn(min = 76.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -317,13 +359,23 @@ fun WordBankView(
 
 @Composable
 private fun Tile(text: String, enabled: Boolean, onClick: () -> Unit) {
+    val sounds = LocalAppContainer.current.sounds
+    val interactionSource = remember { MutableInteractionSource() }
     Box(
         Modifier
             .padding(vertical = 4.dp)
+            .pressScale(interactionSource)
             .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.background)
             .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled) { onClick() }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                enabled = enabled
+            ) {
+                sounds.tap()
+                onClick()
+            }
             .padding(horizontal = 14.dp, vertical = 10.dp)
     ) {
         Text(text, style = MaterialTheme.typography.titleMedium)
