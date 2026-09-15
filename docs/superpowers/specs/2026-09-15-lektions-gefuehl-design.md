@@ -26,7 +26,7 @@ Lottie. Diese folgen als eigene Etappen.
 
 ### Combo-Serie
 - Zähler richtiger Antworten in Folge; eine falsche Antwort setzt ihn auf 0.
-- Ab 3 in Folge: Banner „🔥 N in Folge!“ springt oben über der Aufgabe ein, `combo`-Sound mit steigender Tonhöhe je Stufe (Stufe = min(combo − 2, 5)), Fortschrittsbalken glüht kurz golden.
+- Ab 3 in Folge: Banner „🔥 N in Folge!“ springt oben über der Aufgabe ein, `combo`-Sound mit steigender Tonhöhe je Stufe (Stufe = min(combo − 2, 5)) – ersetzt dann den `correct`-Sound, damit sich nichts überlagert –, Fortschrittsbalken glüht kurz golden.
 
 ### Kopfzeile der Lektion
 - Fortschrittsbalken animiert weich auf den neuen Wert.
