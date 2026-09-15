@@ -72,10 +72,9 @@ Beim Abschluss: Abzeichen und Serie **vor** dem Speichern merken → `completeLe
 - Systemeinstellung „Animationen entfernen“ → Compose verkürzt Animationen automatisch; Ablauf funktioniert trotzdem.
 
 ### Sounds & Lizenz
-Alle Sounds von Kenney (CC0), abgelegt in `app/src/main/res/raw/`, Quelle in `LICENSES.md`:
-- Kurze Effekte (`tap`, `correct`, `wrong`, `combo`, `xpTick`) aus „Interface Sounds“ – Kandidaten: `select_001`, `confirmation_001`, `error_004`, `glass_002`, `tick_002`.
-- Längere Belohnungen (`celebrate`, `badge`, `streak`) aus „Music Jingles“. Ohne dieses Paket bleiben diese drei als berechnete Töne (bisheriger `SoundPlayer`-Stil).
-- Auswahl nach Dateiname/Länge; die endgültige Zuordnung wird beim Test auf dem Handy bestätigt.
+Eigene, per Synthese erzeugte WAV-Sounds im Stil von Lern-Apps (Marimba/Glocke), abgelegt in `app/src/main/res/raw/`, beschrieben in `LICENSES.md`.
+Nach dem ersten Handy-Test ersetzt: Die zuerst gewählten Kenney-Sounds (CC0) klangen dem Kind nicht genug nach Duolingo.
+Richtig = helles, aufsteigendes „Ding-Ding“; falsch = dumpfes, absteigendes „Bonk“; Abschluss = Arpeggio-Fanfare.
 
 ## Tests
 - Unit-Tests für `LessonLogic` (Combo, Level, Genauigkeit, neue Abzeichen, Lobspruch ohne direkte Wiederholung).
