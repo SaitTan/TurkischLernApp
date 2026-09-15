@@ -22,6 +22,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,7 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     var showReset by remember { mutableStateOf(false) }
     var showParentArea by remember { mutableStateOf(false) }
+    val settings by container.settingsRepository.current.collectAsState()
 
     val achievements = Achievements.forProgress(progress)
     val doneLessons = progress.completedLessons.size
@@ -187,28 +189,32 @@ fun ProfileScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Unbegrenzte Herzen", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "Aus: Bei Fehlern gehen Herzen verloren (wie in Duolingo).",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    SettingSwitch(
+                        title = "Unbegrenzte Herzen",
+                        subtitle = "Aus: Bei Fehlern gehen Herzen verloren (wie in Duolingo).",
+                        checked = progress.unlimitedHearts,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.progressRepository.setUnlimitedHearts(enabled) }
                         }
-                        Switch(
-                            checked = progress.unlimitedHearts,
-                            onCheckedChange = { enabled ->
-                                scope.launch {
-                                    container.progressRepository.setUnlimitedHearts(enabled)
-                                }
-                            }
-                        )
-                    }
+                    )
+
+                    SettingSwitch(
+                        title = "Sounds",
+                        subtitle = "Töne bei Antworten und Belohnungen. Die Aussprache bleibt an.",
+                        checked = settings.soundEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.settingsRepository.setSoundEnabled(enabled) }
+                        }
+                    )
+
+                    SettingSwitch(
+                        title = "Vibration",
+                        subtitle = "Kurze Vibration bei richtigen und falschen Antworten.",
+                        checked = settings.hapticsEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.settingsRepository.setHapticsEnabled(enabled) }
+                        }
+                    )
 
                     Column {
                         Text("Tagesziel", style = MaterialTheme.typography.titleMedium)
@@ -338,4 +344,29 @@ private fun GoalChip(selected: Boolean, label: String, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     )
+}
+
+/** Einstellungszeile mit Titel, Erklärung und Schalter. */
+@Composable
+private fun SettingSwitch(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
 }
