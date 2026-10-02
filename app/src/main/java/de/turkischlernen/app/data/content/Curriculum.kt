@@ -135,9 +135,9 @@ object Curriculum {
         Word("usudum", "üşüdüm", "Mir ist kalt", "🥶", "Ü-schü-düm")
     )
 
-    /** Alle Vokabeln der App. */
-    val words: List<Word> =
-        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle
+                /** Alle Sätze der App. */
+    val phrases: List<Phrase> =
+        begruessungSaetze + alltagSaetze + ExpandedCurriculum.phrases
 
     // ----------------------------------------------------------------- Sätze
 
@@ -246,7 +246,17 @@ object Curriculum {
             words = gefuehle,
             phrases = alltagSaetze
         )
-    )
+    ) + (ExpandedCurriculum.units + EverydayCurriculum.units).map { content ->
+        buildUnit(
+            id = content.id,
+            title = content.title,
+            subtitle = content.subtitle,
+            emoji = content.emoji,
+            colorHex = content.colorHex,
+            words = content.words,
+            phrases = content.phrases
+        )
+    }
 
     // ------------------------------------------------------------ Nachschlagen
 
