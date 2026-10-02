@@ -50,6 +50,17 @@ class ExerciseGeneratorTest {
     }
 
     @Test
+    fun `keine Runde ist laenger als 14 Aufgaben`() {
+        Curriculum.lessons.forEach { lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(5))
+            assertTrue(
+                "${lesson.id} hat ${exercises.size} Aufgaben",
+                exercises.size <= 14
+            )
+        }
+    }
+
+    @Test
     fun `die erste Aufgabe fuehrt ein Wort mit Bild ein`() {
         val lesson = Curriculum.lessons.first { it.wordIds.isNotEmpty() }
         val first = ExerciseGenerator.forLesson(lesson, Random(3)).first()

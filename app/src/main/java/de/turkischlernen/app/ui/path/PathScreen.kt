@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -22,11 +23,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import kotlinx.coroutines.launch
+import java.time.LocalDate
+import kotlin.random.Random
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,12 +44,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
+import de.turkischlernen.app.data.content.DailyQuests
+import de.turkischlernen.app.data.progress.ChestLogic
 import de.turkischlernen.app.data.model.LearnUnit
 import de.turkischlernen.app.data.model.Lesson
 import de.turkischlernen.app.data.model.LessonKind
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ThickProgressBar
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.rewards.ChestOverlay
+import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.components.darker
 import de.turkischlernen.app.ui.theme.AppColors
 
@@ -64,8 +79,21 @@ fun PathScreen(
     val currentIndex = allLessons.indexOfFirst { it.id !in progress.completedLessons }
         .let { if (it < 0) allLessons.size else it }
 
+    val container = LocalAppContainer.current
+    val settings by container.settingsRepository.current.collectAsState()
+    val scope = rememberCoroutineScope()
+    val heute = remember { LocalDate.now() }
+    val quests = remember(heute) { DailyQuests.forDay(heute) }
+
+    // Welche Truhe gerade offen ist; der Inhalt steht pro Truhe fest.
+    var chestToOpen by remember { mutableStateOf<String?>(null) }
+    val reward = remember(chestToOpen, progress.unlockedItems) {
+        chestToOpen?.let { ChestLogic.roll(Random(it.hashCode()), progress.unlockedItems) }
+    }
+
+    Box(modifier.fillMaxSize()) {
     LazyColumn(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         contentPadding = PaddingValues(bottom = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -76,6 +104,29 @@ fun PathScreen(
         }
         item(key = "goal") {
             DailyGoalCard(progress)
+        }
+
+        item(key = "quests") {
+            DailyQuestsCard(quests = quests, progress = progress)
+        }
+
+        val tagesTruhe = ChestLogic.dailyChestId(heute)
+        if (DailyQuests.allDone(heute, progress) && tagesTruhe !in progress.openedChests) {
+            item(key = "tagestruhe") {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Alle Tagesaufgaben geschafft!",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AppColors.GreenDark
+                    )
+                    ChestNode(opened = false, enabled = true) { chestToOpen = tagesTruhe }
+                }
+            }
         }
 
         Curriculum.units.forEach { unit ->
@@ -89,15 +140,29 @@ fun PathScreen(
                     lessonIndex <= currentIndex -> NodeState.CURRENT
                     else -> NodeState.LOCKED
                 }
-                LessonNode(
-                    lesson = lesson,
-                    unit = unit,
-                    state = state,
-                    positionInUnit = lesson.index - 1,
-                    onClick = {
-                        if (state == NodeState.LOCKED) onLockedClick() else onLessonClick(lesson)
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LessonNode(
+                        lesson = lesson,
+                        unit = unit,
+                        state = state,
+                        positionInUnit = lesson.index - 1,
+                        onClick = {
+                            if (state == NodeState.LOCKED) onLockedClick() else onLessonClick(lesson)
+                        }
+                    )
+
+                    // Nach jeder dritten Lektion wartet eine Truhe.
+                    if (ChestLogic.chestAfter(lesson.index)) {
+                        val truhenId = ChestLogic.chestId(lesson.id)
+                        ChestNode(
+                            opened = truhenId in progress.openedChests,
+                            enabled = lesson.id in progress.completedLessons
+                        ) { chestToOpen = truhenId }
                     }
-                )
+                }
             }
         }
 
@@ -117,6 +182,61 @@ fun PathScreen(
                 )
             }
         }
+    }
+
+        val offeneTruhe = chestToOpen
+        if (offeneTruhe != null && reward != null) {
+            ChestOverlay(
+                reward = reward,
+                avatar = settings.avatar,
+                onClose = {
+                    scope.launch { container.progressRepository.openChest(offeneTruhe, reward) }
+                    chestToOpen = null
+                }
+            )
+        }
+    }
+}
+
+/** Truhen-Knoten auf dem Lernpfad. */
+@Composable
+private fun ChestNode(
+    opened: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val pulse by rememberInfiniteTransition(label = "truhe").animateFloat(
+        initialValue = 1f,
+        targetValue = if (enabled && !opened) 1.08f else 1f,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
+        label = "truhePuls"
+    )
+
+    Box(
+        modifier
+            .padding(vertical = 10.dp)
+            .size(74.dp)
+            .scale(pulse)
+            .clip(CircleShape)
+            .background(
+                when {
+                    opened -> AppColors.Locked
+                    enabled -> AppColors.Gold
+                    else -> AppColors.Locked
+                }
+            )
+            .clickable(enabled = enabled && !opened) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = when {
+                opened -> "📭"
+                enabled -> "🎁"
+                else -> "🔒"
+            },
+            fontSize = 32.sp
+        )
     }
 }
 
@@ -241,6 +361,8 @@ private fun LessonNode(
         NodeState.LOCKED -> AppColors.Locked
     }
 
+    val settings by LocalAppContainer.current.settingsRepository.current.collectAsState()
+
     val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
         initialValue = 1f,
         targetValue = if (state == NodeState.CURRENT) 1.06f else 1f,
@@ -305,6 +427,18 @@ private fun LessonNode(
                         else -> "⭐"
                     },
                     fontSize = 34.sp
+                )
+            }
+
+            // Das Maskottchen sitzt neben der Lektion, die als Nächstes dran ist.
+            if (state == NodeState.CURRENT) {
+                Kangal(
+                    mood = MascotMood.WAVE,
+                    size = 70.dp,
+                    avatar = settings.avatar,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 62.dp)
                 )
             }
         }

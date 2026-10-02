@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,14 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +43,14 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
+import de.turkischlernen.app.data.progress.LevelLogic
+import de.turkischlernen.app.data.settings.AvatarOptions
+import de.turkischlernen.app.data.settings.ColorOption
+import de.turkischlernen.app.ui.avatar.HumanAvatar
 import de.turkischlernen.app.data.progress.UserProgress
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.mascot.MascotMood
+import de.turkischlernen.app.ui.components.ThickProgressBar
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
 
@@ -53,6 +65,9 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     var showReset by remember { mutableStateOf(false) }
     var showParentArea by remember { mutableStateOf(false) }
+    val settings by container.settingsRepository.current.collectAsState()
+    // Eigener Zustand, damit der Cursor beim Tippen nicht springt.
+    var nameInput by remember { mutableStateOf(settings.avatar.name) }
 
     val achievements = Achievements.forProgress(progress)
     val doneLessons = progress.completedLessons.size
@@ -64,11 +79,28 @@ fun ProfileScreen(
     ) {
         item(key = "head") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("🦉", fontSize = 66.sp)
-                Text("Mein Türkisch", style = MaterialTheme.typography.headlineMedium)
+                HumanAvatar(avatar = settings.avatar, size = 160.dp)
                 Text(
-                    "Serie: ${progress.streakDays} Tage",
+                    text = settings.avatar.name.ifBlank { "Mein Türkisch" },
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Text(
+                    "Level ${LevelLogic.levelOf(progress.totalXp)} · Serie: ${progress.streakDays} Tage",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                ThickProgressBar(
+                    fraction = LevelLogic.xpIntoLevel(progress.totalXp) /
+                        LevelLogic.XP_PER_LEVEL.toFloat(),
+                    modifier = Modifier.fillMaxWidth(0.7f),
+                    color = AppColors.Gold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Noch ${LevelLogic.xpToNext(progress.totalXp)} XP bis Level " +
+                        "${LevelLogic.levelOf(progress.totalXp) + 1}",
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -86,6 +118,10 @@ fun ProfileScreen(
                     AppColors.Blue, Modifier.weight(1f)
                 )
                 StatBox("✅", "$doneLessons", "Lektionen", AppColors.Green, Modifier.weight(1f))
+                StatBox(
+                    "🎮", "${progress.playMinutes}", "Minuten",
+                    AppColors.Purple, Modifier.weight(1f)
+                )
             }
         }
 
@@ -105,6 +141,162 @@ fun ProfileScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        item(key = "figur") {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Meine Figur", style = MaterialTheme.typography.titleLarge)
+
+                Text("Name", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { eingabe ->
+                        val gekuerzt = AvatarOptions.cleanName(eingabe)
+                        nameInput = gekuerzt
+                        scope.launch { container.settingsRepository.setAvatarName(gekuerzt) }
+                    },
+                    singleLine = true,
+                    placeholder = { Text("Dein Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Hautton", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(AvatarOptions.skins, settings.avatar.skinId) { id ->
+                    scope.launch { container.settingsRepository.setAvatarSkin(id) }
+                }
+
+                Text("Frisur", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.hairStyles.forEach { style ->
+                        val selected = settings.avatar.hairId == style.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .clickable {
+                                    scope.launch { container.settingsRepository.setAvatarHair(style.id) }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HumanAvatar(
+                                avatar = settings.avatar.copy(hairId = style.id),
+                                size = 42.dp,
+                                headOnly = true
+                            )
+                        }
+                    }
+                }
+
+                Text("Haarfarbe", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(AvatarOptions.hairColors, settings.avatar.hairColorId) { id ->
+                    scope.launch { container.settingsRepository.setAvatarHairColor(id) }
+                }
+
+                Text("T-Shirt", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(
+                    options = AvatarOptions.shirts,
+                    selectedId = settings.avatar.shirtId,
+                    circleSize = 40,
+                    unlockedItems = progress.unlockedItems
+                ) { id ->
+                    scope.launch { container.settingsRepository.setAvatarShirt(id) }
+                }
+
+                SettingSwitch(
+                    title = "Brille",
+                    subtitle = "Die Figur traegt eine Brille.",
+                    checked = settings.avatar.glasses,
+                    onCheckedChange = { an ->
+                        scope.launch { container.settingsRepository.setAvatarGlasses(an) }
+                    }
+                )
+            }
+        }
+
+        item(key = "hund") {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Mein Hund", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Der Kangal begleitet dich in den Lektionen.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Kangal(mood = MascotMood.IDLE, size = 120.dp, avatar = settings.avatar)
+                }
+
+                Text("Fellfarbe", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.furs.forEach { fur ->
+                        val selected = settings.avatar.furId == fur.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(Color(fur.furHex))
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = CircleShape
+                                )
+                                .clickable {
+                                    scope.launch { container.settingsRepository.setAvatarFur(fur.id) }
+                                }
+                        )
+                    }
+                }
+
+                Text("Accessoire", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.accessories.forEach { accessory ->
+                        val frei = AvatarOptions.isUnlocked(accessory.id, progress.unlockedItems)
+                        val selected = settings.avatar.accessoryId == accessory.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .clickable(enabled = frei) {
+                                    scope.launch {
+                                        container.settingsRepository.setAvatarAccessory(accessory.id)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(if (frei) accessory.emoji else "🔒", fontSize = 22.sp)
+                        }
+                    }
+                }
             }
         }
 
@@ -187,28 +379,32 @@ fun ProfileScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Unbegrenzte Herzen", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                "Aus: Bei Fehlern gehen Herzen verloren (wie in Duolingo).",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    SettingSwitch(
+                        title = "Unbegrenzte Herzen",
+                        subtitle = "Aus: Bei Fehlern gehen Herzen verloren (wie in Duolingo).",
+                        checked = progress.unlimitedHearts,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.progressRepository.setUnlimitedHearts(enabled) }
                         }
-                        Switch(
-                            checked = progress.unlimitedHearts,
-                            onCheckedChange = { enabled ->
-                                scope.launch {
-                                    container.progressRepository.setUnlimitedHearts(enabled)
-                                }
-                            }
-                        )
-                    }
+                    )
+
+                    SettingSwitch(
+                        title = "Sounds",
+                        subtitle = "Töne bei Antworten und Belohnungen. Die Aussprache bleibt an.",
+                        checked = settings.soundEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.settingsRepository.setSoundEnabled(enabled) }
+                        }
+                    )
+
+                    SettingSwitch(
+                        title = "Vibration",
+                        subtitle = "Kurze Vibration bei richtigen und falschen Antworten.",
+                        checked = settings.hapticsEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch { container.settingsRepository.setHapticsEnabled(enabled) }
+                        }
+                    )
 
                     Column {
                         Text("Tagesziel", style = MaterialTheme.typography.titleMedium)
@@ -244,6 +440,27 @@ fun ProfileScreen(
                             )
                         }
                     }
+                    Text("Spielzeit", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Verdient: ${progress.playMinutes} Minuten PlayStation " +
+                            "(1 Minute je abgeschlossener Lektion).",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(5, 15, 30).forEach { minuten ->
+                            GoalChip(
+                                selected = false,
+                                label = "-$minuten min",
+                                onClick = {
+                                    scope.launch {
+                                        container.progressRepository.usePlayMinutes(minuten)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
                     SettingButton("🗑️ Fortschritt zurücksetzen", AppColors.Red) {
                         showReset = true
                     }
@@ -338,4 +555,61 @@ private fun GoalChip(selected: Boolean, label: String, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     )
+}
+
+/** Einstellungszeile mit Titel, Erklärung und Schalter. */
+@Composable
+private fun SettingSwitch(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/** Reihe aus runden Farbfeldern; das gewaehlte Feld bekommt einen gruenen Rand. */
+@Composable
+private fun ColorPickerRow(
+    options: List<ColorOption>,
+    selectedId: String,
+    circleSize: Int = 46,
+    unlockedItems: Set<String> = emptySet(),
+    onPick: (String) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        options.forEach { option ->
+            val selected = option.id == selectedId
+            val frei = AvatarOptions.isUnlocked(option.id, unlockedItems)
+            Box(
+                Modifier
+                    .size(circleSize.dp)
+                    .clip(CircleShape)
+                    .background(Color(option.hex))
+                    .border(
+                        width = if (selected) 4.dp else 2.dp,
+                        color = if (selected) AppColors.Green else MaterialTheme.colorScheme.outline,
+                        shape = CircleShape
+                    )
+                    .clickable(enabled = frei) { onPick(option.id) },
+                contentAlignment = Alignment.Center
+            ) {
+                if (!frei) Text("🔒", fontSize = 18.sp)
+            }
+        }
+    }
 }

@@ -137,7 +137,8 @@ object Curriculum {
 
     /** Alle Vokabeln der App. */
     val words: List<Word> =
-        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle
+        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle +
+            ExpandedCurriculum.words + EverydayCurriculum.words
 
     // ----------------------------------------------------------------- Sätze
 
@@ -167,7 +168,8 @@ object Curriculum {
     )
 
     /** Alle Sätze der App. */
-    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze
+    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze +
+        ExpandedCurriculum.phrases + EverydayCurriculum.phrases
 
     // --------------------------------------------------------------- Einheiten
 
@@ -246,7 +248,17 @@ object Curriculum {
             words = gefuehle,
             phrases = alltagSaetze
         )
-    )
+    ) + (ExpandedCurriculum.units + EverydayCurriculum.units).map { content ->
+        buildUnit(
+            id = content.id,
+            title = content.title,
+            subtitle = content.subtitle,
+            emoji = content.emoji,
+            colorHex = content.colorHex,
+            words = content.words,
+            phrases = content.phrases
+        )
+    }
 
     // ------------------------------------------------------------ Nachschlagen
 
@@ -295,25 +307,31 @@ object Curriculum {
         phrasesPerLesson: Int = 2
     ): LearnUnit {
         val lessons = mutableListOf<Lesson>()
+        // index nummeriert die IDs durch und darf sich nie ändern (gespeicherter
+        // Fortschritt). Die Titel zählen Wort- und Satz-Lektionen getrennt.
         var index = 0
+        var wordLessonNumber = 0
+        var phraseLessonNumber = 0
 
         words.chunked(wordsPerLesson).forEach { chunk ->
             index++
+            wordLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Lektion $index",
+                title = "Lektion $wordLessonNumber",
                 wordIds = chunk.map { it.id }
             )
         }
         phrases.chunked(phrasesPerLesson).forEach { chunk ->
             index++
+            phraseLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Sätze $index",
+                title = "Sätze $phraseLessonNumber",
                 phraseIds = chunk.map { it.id }
             )
         }
