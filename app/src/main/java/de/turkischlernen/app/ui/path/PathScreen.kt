@@ -41,6 +41,8 @@ import de.turkischlernen.app.data.model.Lesson
 import de.turkischlernen.app.data.model.LessonKind
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ThickProgressBar
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.components.darker
 import de.turkischlernen.app.ui.theme.AppColors
 
@@ -305,6 +307,17 @@ private fun LessonNode(
                         else -> "⭐"
                     },
                     fontSize = 34.sp
+                )
+            }
+
+            // Das Maskottchen sitzt neben der Lektion, die als Nächstes dran ist.
+            if (state == NodeState.CURRENT) {
+                Kangal(
+                    mood = MascotMood.WAVE,
+                    size = 56.dp,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .offset(x = 62.dp)
                 )
             }
         }

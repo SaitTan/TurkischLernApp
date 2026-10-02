@@ -40,6 +40,8 @@ import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
 import de.turkischlernen.app.data.progress.UserProgress
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
 
@@ -66,7 +68,7 @@ fun ProfileScreen(
     ) {
         item(key = "head") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("🦉", fontSize = 66.sp)
+                Kangal(mood = MascotMood.IDLE, size = 110.dp)
                 Text("Mein Türkisch", style = MaterialTheme.typography.headlineMedium)
                 Text(
                     "Serie: ${progress.streakDays} Tage",
