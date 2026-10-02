@@ -16,6 +16,12 @@ object ExerciseGenerator {
 
     private const val OPTION_COUNT = 4
 
+    /**
+     * Mehr Aufgaben am Stück schaffen Kinder nicht konzentriert – vor allem die
+     * Prüfungen der großen Einheiten wären sonst 25 Aufgaben lang.
+     */
+    private const val MAX_EXERCISES_PER_LESSON = 14
+
     fun forLesson(lesson: Lesson, random: Random = Random.Default): List<Exercise> {
         val words = lesson.wordIds.mapNotNull { Curriculum.word(it) }
         val phrases = lesson.phraseIds.mapNotNull { Curriculum.phrase(it) }
@@ -47,9 +53,10 @@ object ExerciseGenerator {
             exercises += Exercise.MatchPairs(pairPool.take(4))
         }
 
-        // Die erste Aufgabe bleibt eine Bildaufgabe, der Rest wird gemischt.
+        // Die erste Aufgabe bleibt eine Bildaufgabe, der Rest wird gemischt und gekürzt.
         return if (exercises.size > 1) {
-            listOf(exercises.first()) + exercises.drop(1).shuffled(random)
+            (listOf(exercises.first()) + exercises.drop(1).shuffled(random))
+                .take(MAX_EXERCISES_PER_LESSON)
         } else {
             exercises
         }
