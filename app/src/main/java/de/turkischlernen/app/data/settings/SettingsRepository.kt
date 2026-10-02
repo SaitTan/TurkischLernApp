@@ -40,6 +40,11 @@ class SettingsRepository(context: Context) {
         val avatarFur = stringPreferencesKey("avatar_fur")
         val avatarAccessory = stringPreferencesKey("avatar_accessory")
         val avatarName = stringPreferencesKey("avatar_name")
+        val avatarSkin = stringPreferencesKey("avatar_skin")
+        val avatarHair = stringPreferencesKey("avatar_hair")
+        val avatarHairColor = stringPreferencesKey("avatar_hair_color")
+        val avatarShirt = stringPreferencesKey("avatar_shirt")
+        val avatarGlasses = booleanPreferencesKey("avatar_glasses")
     }
 
     /** Synchron lesbar, damit Sounds und Vibration ohne Verzögerung prüfen können. */
@@ -51,7 +56,12 @@ class SettingsRepository(context: Context) {
                 avatar = AvatarConfig(
                     furId = prefs[Keys.avatarFur] ?: AvatarOptions.DEFAULT_FUR,
                     accessoryId = prefs[Keys.avatarAccessory] ?: AvatarOptions.DEFAULT_ACCESSORY,
-                    name = prefs[Keys.avatarName] ?: AvatarOptions.DEFAULT_NAME
+                    name = prefs[Keys.avatarName] ?: AvatarOptions.DEFAULT_NAME,
+                    skinId = prefs[Keys.avatarSkin] ?: AvatarOptions.DEFAULT_SKIN,
+                    hairId = prefs[Keys.avatarHair] ?: AvatarOptions.DEFAULT_HAIR,
+                    hairColorId = prefs[Keys.avatarHairColor] ?: AvatarOptions.DEFAULT_HAIR_COLOR,
+                    shirtId = prefs[Keys.avatarShirt] ?: AvatarOptions.DEFAULT_SHIRT,
+                    glasses = prefs[Keys.avatarGlasses] ?: false
                 )
             )
         }
@@ -74,8 +84,28 @@ class SettingsRepository(context: Context) {
         store.edit { prefs -> prefs[Keys.avatarAccessory] = id }
     }
 
-    /** Name des Hundes – zu lange Eingaben werden gekürzt. */
+    /** Angezeigter Name – zu lange Eingaben werden gekürzt. */
     suspend fun setAvatarName(name: String) {
         store.edit { prefs -> prefs[Keys.avatarName] = AvatarOptions.cleanName(name) }
+    }
+
+    suspend fun setAvatarSkin(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarSkin] = id }
+    }
+
+    suspend fun setAvatarHair(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarHair] = id }
+    }
+
+    suspend fun setAvatarHairColor(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarHairColor] = id }
+    }
+
+    suspend fun setAvatarShirt(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarShirt] = id }
+    }
+
+    suspend fun setAvatarGlasses(enabled: Boolean) {
+        store.edit { prefs -> prefs[Keys.avatarGlasses] = enabled }
     }
 }

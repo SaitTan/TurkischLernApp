@@ -44,6 +44,8 @@ import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
 import de.turkischlernen.app.data.settings.AvatarOptions
+import de.turkischlernen.app.data.settings.ColorOption
+import de.turkischlernen.app.ui.avatar.HumanAvatar
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.mascot.Kangal
 import de.turkischlernen.app.ui.mascot.MascotMood
@@ -75,7 +77,7 @@ fun ProfileScreen(
     ) {
         item(key = "head") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Kangal(mood = MascotMood.IDLE, size = 150.dp, avatar = settings.avatar)
+                HumanAvatar(avatar = settings.avatar, size = 160.dp)
                 Text(
                     text = settings.avatar.name.ifBlank { "Mein Türkisch" },
                     style = MaterialTheme.typography.headlineMedium
@@ -122,7 +124,82 @@ fun ProfileScreen(
             }
         }
 
-        item(key = "avatar") {
+        item(key = "figur") {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Meine Figur", style = MaterialTheme.typography.titleLarge)
+
+                Text("Name", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { eingabe ->
+                        val gekuerzt = AvatarOptions.cleanName(eingabe)
+                        nameInput = gekuerzt
+                        scope.launch { container.settingsRepository.setAvatarName(gekuerzt) }
+                    },
+                    singleLine = true,
+                    placeholder = { Text("Dein Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text("Hautton", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(AvatarOptions.skins, settings.avatar.skinId) { id ->
+                    scope.launch { container.settingsRepository.setAvatarSkin(id) }
+                }
+
+                Text("Frisur", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.hairStyles.forEach { style ->
+                        val selected = settings.avatar.hairId == style.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .clickable {
+                                    scope.launch { container.settingsRepository.setAvatarHair(style.id) }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(style.emoji, fontSize = 22.sp)
+                        }
+                    }
+                }
+
+                Text("Haarfarbe", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(AvatarOptions.hairColors, settings.avatar.hairColorId) { id ->
+                    scope.launch { container.settingsRepository.setAvatarHairColor(id) }
+                }
+
+                Text("T-Shirt", style = MaterialTheme.typography.titleMedium)
+                ColorPickerRow(AvatarOptions.shirts, settings.avatar.shirtId, circleSize = 40) { id ->
+                    scope.launch { container.settingsRepository.setAvatarShirt(id) }
+                }
+
+                SettingSwitch(
+                    title = "Brille",
+                    subtitle = "Die Figur traegt eine Brille.",
+                    checked = settings.avatar.glasses,
+                    onCheckedChange = { an ->
+                        scope.launch { container.settingsRepository.setAvatarGlasses(an) }
+                    }
+                )
+            }
+        }
+
+        item(key = "hund") {
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -132,6 +209,15 @@ fun ProfileScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text("Mein Hund", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Der Kangal begleitet dich in den Lektionen.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Kangal(mood = MascotMood.IDLE, size = 120.dp, avatar = settings.avatar)
+                }
 
                 Text("Fellfarbe", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -181,19 +267,6 @@ fun ProfileScreen(
                         }
                     }
                 }
-
-                Text("Name", style = MaterialTheme.typography.titleMedium)
-                OutlinedTextField(
-                    value = nameInput,
-                    onValueChange = { eingabe ->
-                        val gekuerzt = AvatarOptions.cleanName(eingabe)
-                        nameInput = gekuerzt
-                        scope.launch { container.settingsRepository.setAvatarName(gekuerzt) }
-                    },
-                    singleLine = true,
-                    placeholder = { Text(AvatarOptions.DEFAULT_NAME) },
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         }
 
@@ -455,5 +528,32 @@ private fun SettingSwitch(
             )
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+/** Reihe aus runden Farbfeldern; das gewaehlte Feld bekommt einen gruenen Rand. */
+@Composable
+private fun ColorPickerRow(
+    options: List<ColorOption>,
+    selectedId: String,
+    circleSize: Int = 46,
+    onPick: (String) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        options.forEach { option ->
+            val selected = option.id == selectedId
+            Box(
+                Modifier
+                    .size(circleSize.dp)
+                    .clip(CircleShape)
+                    .background(Color(option.hex))
+                    .border(
+                        width = if (selected) 4.dp else 2.dp,
+                        color = if (selected) AppColors.Green else MaterialTheme.colorScheme.outline,
+                        shape = CircleShape
+                    )
+                    .clickable { onPick(option.id) }
+            )
+        }
     }
 }
