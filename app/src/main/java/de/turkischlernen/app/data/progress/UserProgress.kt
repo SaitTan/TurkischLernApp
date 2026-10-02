@@ -6,6 +6,8 @@ import java.time.LocalDate
 data class UserProgress(
     val totalXp: Int = 0,
     val xpToday: Int = 0,
+    /** Heute schon durch freies Wiederholen gesammelte XP (begrenzt). */
+    val practiceXpToday: Int = 0,
     val dailyGoal: Int = 30,
     val streakDays: Int = 0,
     val lastActiveDate: String = "",
@@ -26,6 +28,9 @@ data class UserProgress(
 
     companion object {
         const val MAX_HEARTS = 5
+
+        /** Mehr XP als das pro Tag gibt freies Wiederholen nicht. */
+        const val PRACTICE_XP_DAILY_CAP = 20
 
         /** Ein Herz wächst alle 20 Minuten nach. */
         const val HEART_REFILL_MILLIS = 20L * 60L * 1000L
@@ -64,4 +69,12 @@ object ProgressLogic {
 
     /** XP einer Lektion inkl. Bonus für eine fehlerfreie Runde. */
     fun lessonXp(baseXp: Int, mistakes: Int): Int = if (mistakes == 0) baseXp + 5 else baseXp
+
+    /**
+     * XP für freies Wiederholen. Pro Tag gibt es dafür höchstens
+     * [UserProgress.PRACTICE_XP_DAILY_CAP] – sonst ließe sich das Tagesziel
+     * beliebig oft in Sekunden erfüllen.
+     */
+    fun practiceXp(baseXp: Int, practiceXpToday: Int): Int =
+        (UserProgress.PRACTICE_XP_DAILY_CAP - practiceXpToday).coerceIn(0, baseXp)
 }

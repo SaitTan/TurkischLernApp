@@ -167,7 +167,8 @@ fun LessonCompleteScreen(
                 ) {
                     AnimatedCounter(
                         target = earnedXp,
-                        start = stage >= STAGE_XP,
+                        // Erst zählen, wenn die gespeicherten XP feststehen.
+                        start = stage >= STAGE_XP && resultsReady,
                         style = MaterialTheme.typography.titleLarge,
                         color = AppColors.Gold,
                         suffix = " XP",

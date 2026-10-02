@@ -42,6 +42,19 @@ class ProgressLogicTest {
         assertEquals(15, ProgressLogic.lessonXp(15, 2))
     }
 
+    @Test
+    fun `freies Wiederholen gibt XP bis zum Tageskontingent`() {
+        assertEquals(10, ProgressLogic.practiceXp(10, 0))
+        assertEquals(10, ProgressLogic.practiceXp(10, 10))
+        assertEquals(0, ProgressLogic.practiceXp(10, UserProgress.PRACTICE_XP_DAILY_CAP))
+        assertEquals(0, ProgressLogic.practiceXp(10, 100))
+    }
+
+    @Test
+    fun `das letzte Wiederholen gibt nur den Rest des Kontingents`() {
+        assertEquals(5, ProgressLogic.practiceXp(10, UserProgress.PRACTICE_XP_DAILY_CAP - 5))
+    }
+
     /** Beispielzeitpunkt (März 2026) – wie ein echter Zeitstempel. */
     private val now = 1_773_000_000_000L
 
