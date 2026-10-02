@@ -208,7 +208,10 @@ fun LessonScreen(
                             exercise = exercise,
                             interaction = interaction,
                             onSpeak = speak,
-                            onMismatch = { viewModel.onPairMismatch() }
+                            onMismatch = {
+                                interaction.pairMistakes++
+                                viewModel.onPairMismatch()
+                            }
                         )
                     }
             }
@@ -223,7 +226,9 @@ fun LessonScreen(
                 viewModel.submitAnswer(
                     correct = correct,
                     correctAnswer = correctAnswerText(exercise),
-                    itemIds = exercise.itemIds
+                    itemIds = exercise.itemIds,
+                    // Ein falsches Paar kostet kein Herz, zählt aber als Fehler.
+                    loseHeart = exercise !is Exercise.MatchPairs
                 )
                 speak(spokenText(exercise), false)
             },
@@ -377,24 +382,33 @@ private fun FeedbackBar(
                         Text("🙂", fontSize = 30.sp)
                         Column(Modifier.weight(1f)) {
                             Text(
-                                "Fast! Richtig ist:",
+                                // "Paare finden" hat keine einzelne Lösung zum Anzeigen.
+                                if (state.correctAnswer.isBlank()) {
+                                    "Fast! Schau dir die Paare noch einmal an."
+                                } else {
+                                    "Fast! Richtig ist:"
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 color = AppColors.RedDark
                             )
-                            Text(
-                                state.correctAnswer,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = AppColors.RedDark
-                            )
+                            if (state.correctAnswer.isNotBlank()) {
+                                Text(
+                                    state.correctAnswer,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = AppColors.RedDark
+                                )
+                            }
                         }
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White)
-                                .clickable { onReplay() }
-                                .padding(8.dp)
-                        ) {
-                            Text("🔊", fontSize = 22.sp)
+                        if (state.correctAnswer.isNotBlank()) {
+                            Box(
+                                Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White)
+                                    .clickable { onReplay() }
+                                    .padding(8.dp)
+                            ) {
+                                Text("🔊", fontSize = 22.sp)
+                            }
                         }
                     }
                 }

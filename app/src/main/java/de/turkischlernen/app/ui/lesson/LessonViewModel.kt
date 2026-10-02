@@ -115,8 +115,16 @@ class LessonViewModel(
     val progressFraction: Float
         get() = if (totalExercises == 0) 1f else solvedCount.toFloat() / totalExercises
 
-    /** Antwort auswerten. [itemIds] sind die geübten Vokabeln. */
-    fun submitAnswer(correct: Boolean, correctAnswer: String, itemIds: List<String>) {
+    /**
+     * Antwort auswerten. [itemIds] sind die geübten Vokabeln.
+     * [loseHeart] ist false, wenn ein Fehler kein Herz kosten soll (Paare finden).
+     */
+    fun submitAnswer(
+        correct: Boolean,
+        correctAnswer: String,
+        itemIds: List<String>,
+        loseHeart: Boolean = true
+    ) {
         if (answerState != AnswerState.Waiting) return
 
         totalAnswers++
@@ -144,7 +152,7 @@ class LessonViewModel(
             current?.let { repeatQueue.add(it) }
             viewModelScope.launch {
                 itemIds.forEach { repository.addMistake(it) }
-                repository.loseHeart()
+                if (loseHeart) repository.loseHeart()
             }
         }
     }
@@ -175,11 +183,15 @@ class LessonViewModel(
 
     private fun complete() {
         if (finished) return
-        val baseXp = lesson?.xpReward ?: PRACTICE_XP
-        earnedXp = ProgressLogic.lessonXp(baseXp, mistakes)
         finished = true
         viewModelScope.launch {
             val before = repository.progress.first()
+            // Freies Wiederholen gibt nur bis zum Tageskontingent XP.
+            earnedXp = if (lesson == null) {
+                ProgressLogic.practiceXp(PRACTICE_XP, before.practiceXpToday)
+            } else {
+                ProgressLogic.lessonXp(lesson.xpReward, mistakes)
+            }
             repository.completeLesson(
                 // Freies Wiederholen zählt nicht als abgeschlossene Lektion.
                 lessonId = lesson?.id,
