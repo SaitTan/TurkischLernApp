@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,6 +43,9 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.MascotPhrase
 import de.turkischlernen.app.data.progress.Achievement
+import de.turkischlernen.app.data.progress.ChestLogic
+import de.turkischlernen.app.data.progress.LevelLogic
+import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.data.progress.LessonLogic
 import de.turkischlernen.app.ui.components.AnimatedCounter
 import de.turkischlernen.app.ui.components.ChunkyButton
@@ -50,8 +54,11 @@ import de.turkischlernen.app.ui.components.popIn
 import de.turkischlernen.app.ui.mascot.Kangal
 import de.turkischlernen.app.ui.mascot.MascotBubble
 import de.turkischlernen.app.ui.mascot.MascotMood
+import de.turkischlernen.app.ui.rewards.ChestOverlay
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 private const val STAGE_TROPHY = 1
 private const val STAGE_TITLE = 2
@@ -66,6 +73,7 @@ private const val COUNTER_MILLIS = 900
 private sealed interface CelebrationOverlay {
     data class Badge(val achievement: Achievement) : CelebrationOverlay
     data class Streak(val days: Int) : CelebrationOverlay
+    data class Level(val level: Int) : CelebrationOverlay
 }
 
 /**
@@ -84,6 +92,8 @@ fun LessonCompleteScreen(
     mascotPhrase: MascotPhrase?,
     /** Verdiente Spielzeit; bei freiem Wiederholen 0. */
     playMinutes: Int,
+    /** Neu erreichtes Level, sonst null. */
+    newLevel: Int?,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -105,13 +115,14 @@ fun LessonCompleteScreen(
         stage = STAGE_DONE
     }
 
-    val overlays = remember(resultsReady, newAchievements, streakIncreased, streakDays) {
+    val overlays = remember(resultsReady, newAchievements, streakIncreased, streakDays, newLevel) {
         if (!resultsReady) {
             emptyList()
         } else {
             buildList {
                 newAchievements.forEach { add(CelebrationOverlay.Badge(it)) }
                 if (streakIncreased) add(CelebrationOverlay.Streak(streakDays))
+                if (newLevel != null) add(CelebrationOverlay.Level(newLevel))
             }
         }
     }
@@ -122,9 +133,26 @@ fun LessonCompleteScreen(
         when (activeOverlay) {
             is CelebrationOverlay.Badge -> sounds.badge()
             is CelebrationOverlay.Streak -> sounds.streak()
+            is CelebrationOverlay.Level -> sounds.streak()
             null -> Unit
         }
     }
+
+    // Nach dem Aufstieg wartet eine Truhe – nur beim ersten Mal je Level.
+    val container = LocalAppContainer.current
+    val scope = rememberCoroutineScope()
+    val progress by container.progressRepository.progress.collectAsState(initial = UserProgress())
+    var levelChestDone by remember { mutableStateOf(false) }
+    val levelChestId = newLevel?.let { LevelLogic.chestId(it) }
+    val levelReward = remember(levelChestId, progress.unlockedItems) {
+        levelChestId?.let { ChestLogic.roll(Random(it.hashCode()), progress.unlockedItems) }
+    }
+    val showLevelChest = levelChestId != null &&
+        levelReward != null &&
+        !levelChestDone &&
+        levelChestId !in progress.openedChests &&
+        stage >= STAGE_DONE &&
+        activeOverlay == null
 
     val settings by LocalAppContainer.current.settingsRepository.current.collectAsState()
 
@@ -258,6 +286,17 @@ fun LessonCompleteScreen(
                 CelebrationOverlayView(activeOverlay) { overlayIndex++ }
             }
         }
+
+        if (showLevelChest && levelChestId != null && levelReward != null) {
+            ChestOverlay(
+                reward = levelReward,
+                avatar = settings.avatar,
+                onClose = {
+                    scope.launch { container.progressRepository.openChest(levelChestId, levelReward) }
+                    levelChestDone = true
+                }
+            )
+        }
     }
 }
 
@@ -340,6 +379,21 @@ private fun CelebrationOverlayView(overlay: CelebrationOverlay, onDismiss: () ->
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
+                    )
+                }
+
+                is CelebrationOverlay.Level -> {
+                    Text("🏅", fontSize = 96.sp, modifier = pulseModifier)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Level ${overlay.level}!",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = AppColors.Gold
+                    )
+                    Text(
+                        "+${LevelLogic.LEVEL_UP_PLAY_MINUTES} Minuten PlayStation 🎮",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = AppColors.Purple
                     )
                 }
 

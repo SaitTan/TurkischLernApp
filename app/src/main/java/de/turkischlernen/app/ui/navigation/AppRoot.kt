@@ -3,6 +3,7 @@ package de.turkischlernen.app.ui.navigation
 import android.content.Intent
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,7 @@ import de.turkischlernen.app.ui.path.PathScreen
 import de.turkischlernen.app.ui.practice.PracticeScreen
 import de.turkischlernen.app.ui.profile.ProfileScreen
 import de.turkischlernen.app.ui.situations.SituationsScreen
+import de.turkischlernen.app.ui.stats.StreakOverlay
 import kotlinx.coroutines.launch
 
 private object Routes {
@@ -92,6 +94,7 @@ private fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val progress by container.progressRepository.progress.collectAsState(initial = UserProgress())
     var tab by remember { mutableIntStateOf(0) }
+    var showStreak by remember { mutableStateOf(false) }
 
     val speak: (String, Boolean) -> Unit = { text, slow -> container.speech.speak(text, slow) }
 
@@ -116,7 +119,7 @@ private fun HomeScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (tab == 0) StatsBar(progress)
+            if (tab == 0) StatsBar(progress, onStreakClick = { showStreak = true })
 
             when (tab) {
                 0 -> PathScreen(
@@ -150,6 +153,10 @@ private fun HomeScreen(
 
                 else -> ProfileScreen(progress = progress)
             }
+        }
+
+        if (showStreak) {
+            StreakOverlay(progress = progress, onClose = { showStreak = false })
         }
     }
 }

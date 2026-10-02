@@ -31,7 +31,8 @@ import de.turkischlernen.app.ui.theme.AppColors
 @Composable
 fun StatsBar(
     progress: UserProgress,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onStreakClick: (() -> Unit)? = null
 ) {
     Row(
         modifier
@@ -40,7 +41,12 @@ fun StatsBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        StatChip("🔥", progress.streakDays.toString(), AppColors.Orange)
+        StatChip(
+            emoji = "🔥",
+            value = progress.streakDays.toString(),
+            color = AppColors.Orange,
+            onClick = onStreakClick
+        )
         StatChip("⭐", progress.totalXp.toString(), AppColors.Gold)
         StatChip(
             emoji = "❤️",

@@ -13,6 +13,9 @@ data class UserProgress(
     val perfectToday: Int = 0,
     val wordsToday: Int = 0,
     val correctToday: Int = 0,
+    /** Tage, an denen gelernt wurde (ISO-Datum), und die längste je erreichte Serie. */
+    val activeDays: Set<String> = emptySet(),
+    val longestStreak: Int = 0,
     /** Verdiente PlayStation-Minuten: eine pro abgeschlossener Lektion. */
     val playMinutes: Int = 0,
     /** Bereits geöffnete Schatztruhen und daraus freigeschaltete Teile. */

@@ -32,6 +32,8 @@ class ProgressRepository(context: Context) {
         val wordsToday = intPreferencesKey("words_today")
         val correctToday = intPreferencesKey("correct_today")
         val playMinutes = intPreferencesKey("play_minutes")
+        val activeDays = stringSetPreferencesKey("active_days")
+        val longestStreak = intPreferencesKey("longest_streak")
         val openedChests = stringSetPreferencesKey("opened_chests")
         val unlockedItems = stringSetPreferencesKey("unlocked_items")
         val dailyGoal = intPreferencesKey("daily_goal")
@@ -59,6 +61,8 @@ class ProgressRepository(context: Context) {
             wordsToday = this[Keys.wordsToday] ?: 0,
             correctToday = this[Keys.correctToday] ?: 0,
             playMinutes = this[Keys.playMinutes] ?: 0,
+            activeDays = this[Keys.activeDays] ?: emptySet(),
+            longestStreak = this[Keys.longestStreak] ?: 0,
             openedChests = this[Keys.openedChests] ?: emptySet(),
             unlockedItems = this[Keys.unlockedItems] ?: emptySet(),
             dailyGoal = this[Keys.dailyGoal] ?: 30,
@@ -111,8 +115,21 @@ class ProgressRepository(context: Context) {
 
             prefs[Keys.totalXp] = (prefs[Keys.totalXp] ?: 0) + earnedXp
             prefs[Keys.xpToday] = ProgressLogic.nextXpToday(lastActive, xpToday, earnedXp, today)
-            prefs[Keys.streak] = ProgressLogic.nextStreak(lastActive, streak, today)
+            val neueSerie = ProgressLogic.nextStreak(lastActive, streak, today)
+            prefs[Keys.streak] = neueSerie
             prefs[Keys.lastActive] = today.toString()
+
+            // Lern-Tage für den Serien-Kalender mitschreiben (auf 90 Tage begrenzt).
+            val tage = StreakCalendar.trim(
+                (prefs[Keys.activeDays] ?: emptySet()) + today.toString(),
+                today
+            )
+            prefs[Keys.activeDays] = tage
+            prefs[Keys.longestStreak] = maxOf(
+                prefs[Keys.longestStreak] ?: 0,
+                neueSerie,
+                StreakCalendar.longestStreak(tage)
+            )
             prefs[Keys.learned] = (prefs[Keys.learned] ?: emptySet()) + practicedItemIds
             prefs[Keys.runs] = (prefs[Keys.runs] ?: 0) + 1
 
@@ -184,6 +201,13 @@ class ProgressRepository(context: Context) {
 
     suspend fun setDailyGoal(goal: Int) {
         store.edit { prefs -> prefs[Keys.dailyGoal] = goal }
+    }
+
+    /** Zusätzliche Spielzeit, z. B. beim Level-Aufstieg. */
+    suspend fun addPlayMinutes(minutes: Int) {
+        store.edit { prefs ->
+            prefs[Keys.playMinutes] = (prefs[Keys.playMinutes] ?: 0) + minutes
+        }
     }
 
     /** Eltern-Bereich: eingelöste Spielzeit abziehen. */

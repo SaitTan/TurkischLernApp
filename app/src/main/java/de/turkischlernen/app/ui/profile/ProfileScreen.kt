@@ -43,12 +43,14 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
+import de.turkischlernen.app.data.progress.LevelLogic
 import de.turkischlernen.app.data.settings.AvatarOptions
 import de.turkischlernen.app.data.settings.ColorOption
 import de.turkischlernen.app.ui.avatar.HumanAvatar
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.mascot.Kangal
 import de.turkischlernen.app.ui.mascot.MascotMood
+import de.turkischlernen.app.ui.components.ThickProgressBar
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
 
@@ -83,8 +85,22 @@ fun ProfileScreen(
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
-                    "Serie: ${progress.streakDays} Tage",
+                    "Level ${LevelLogic.levelOf(progress.totalXp)} · Serie: ${progress.streakDays} Tage",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
+                ThickProgressBar(
+                    fraction = LevelLogic.xpIntoLevel(progress.totalXp) /
+                        LevelLogic.XP_PER_LEVEL.toFloat(),
+                    modifier = Modifier.fillMaxWidth(0.7f),
+                    color = AppColors.Gold
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Noch ${LevelLogic.xpToNext(progress.totalXp)} XP bis Level " +
+                        "${LevelLogic.levelOf(progress.totalXp) + 1}",
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

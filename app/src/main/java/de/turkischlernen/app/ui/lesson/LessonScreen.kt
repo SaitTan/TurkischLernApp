@@ -106,6 +106,7 @@ fun LessonScreen(
             resultsReady = viewModel.resultsReady,
             mascotPhrase = viewModel.mascotPhrase,
             playMinutes = if (viewModel.isPractice) 0 else UserProgress.PLAY_MINUTES_PER_LESSON,
+            newLevel = viewModel.newLevel,
             onContinue = onExit
         )
         return

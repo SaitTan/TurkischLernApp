@@ -19,6 +19,7 @@ import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.progress.Achievement
 import de.turkischlernen.app.data.progress.Achievements
 import de.turkischlernen.app.data.progress.LessonLogic
+import de.turkischlernen.app.data.progress.LevelLogic
 import de.turkischlernen.app.data.progress.ProgressLogic
 import de.turkischlernen.app.data.progress.ProgressRepository
 import kotlinx.coroutines.delay
@@ -88,6 +89,10 @@ class LessonViewModel(
 
     /** Die Serie ist durch diese Lektion gewachsen. */
     var streakIncreased by mutableStateOf(false)
+        private set
+
+    /** Neu erreichtes Level – null, wenn diese Runde keinen Aufstieg brachte. */
+    var newLevel by mutableStateOf<Int?>(null)
         private set
 
     /** Abzeichen und Serie sind berechnet. */
@@ -226,6 +231,13 @@ class LessonViewModel(
                 Achievements.forProgress(after)
             )
             streakIncreased = after.streakDays > before.streakDays
+
+            // Level steigt mit den XP; der Aufstieg bringt zusätzliche Spielzeit.
+            if (LevelLogic.leveledUp(before.totalXp, after.totalXp)) {
+                newLevel = LevelLogic.levelOf(after.totalXp)
+                repository.addPlayMinutes(LevelLogic.LEVEL_UP_PLAY_MINUTES)
+            }
+
             resultsReady = true
         }
     }
