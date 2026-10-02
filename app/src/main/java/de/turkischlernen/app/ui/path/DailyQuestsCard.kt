@@ -75,7 +75,10 @@ fun DailyQuestsCard(
                     ThickProgressBar(
                         fraction = stand.toFloat() / quest.goal,
                         modifier = Modifier.fillMaxWidth(),
-                        color = if (fertig) AppColors.Green else AppColors.Gold
+                        color = if (fertig) AppColors.Green else AppColors.Gold,
+                        // Die Karte hat selbst die Farbe surfaceVariant – ohne eigenen
+                        // Hintergrund waere eine leere Leiste unsichtbar.
+                        trackColor = MaterialTheme.colorScheme.background
                     )
                 }
                 Spacer(Modifier.width(10.dp))
