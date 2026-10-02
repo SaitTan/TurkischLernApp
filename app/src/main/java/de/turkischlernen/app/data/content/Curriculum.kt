@@ -135,9 +135,10 @@ object Curriculum {
         Word("usudum", "üşüdüm", "Mir ist kalt", "🥶", "Ü-schü-düm")
     )
 
-                /** Alle Sätze der App. */
-    val phrases: List<Phrase> =
-        begruessungSaetze + alltagSaetze + ExpandedCurriculum.phrases
+    /** Alle Vokabeln der App. */
+    val words: List<Word> =
+        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle +
+            ExpandedCurriculum.words + EverydayCurriculum.words
 
     // ----------------------------------------------------------------- Sätze
 
@@ -167,7 +168,8 @@ object Curriculum {
     )
 
     /** Alle Sätze der App. */
-    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze
+    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze +
+        ExpandedCurriculum.phrases + EverydayCurriculum.phrases
 
     // --------------------------------------------------------------- Einheiten
 
