@@ -17,6 +17,8 @@ class SoundPlayer(context: Context, private val enabled: () -> Boolean) {
         TAP(R.raw.sfx_tap),
         CORRECT(R.raw.sfx_correct),
         WRONG(R.raw.sfx_wrong),
+        KANGAL_CORRECT(R.raw.sfx_kangal_correct),
+        KANGAL_WRONG(R.raw.sfx_kangal_wrong),
         COMBO(R.raw.sfx_combo),
         XP_TICK(R.raw.sfx_xp_tick),
         CELEBRATE(R.raw.sfx_celebrate),
@@ -50,6 +52,11 @@ class SoundPlayer(context: Context, private val enabled: () -> Boolean) {
     fun tap() = play(Sound.TAP, volume = 0.5f)
     fun correct() = play(Sound.CORRECT)
     fun wrong() = play(Sound.WRONG)
+
+    /** Stimme des Maskottchens – kommt direkt nach dem Prüfungs-Ton. */
+    fun kangalCorrect() = play(Sound.KANGAL_CORRECT)
+
+    fun kangalWrong() = play(Sound.KANGAL_WRONG)
 
     /** Combo-Ton – je höher die Stufe (1..5), desto höher der Klang. */
     fun combo(level: Int) = play(Sound.COMBO, rate = 1f + 0.1f * (level - 1).coerceIn(0, 4))

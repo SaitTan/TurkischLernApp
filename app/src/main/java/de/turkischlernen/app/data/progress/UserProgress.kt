@@ -13,6 +13,8 @@ data class UserProgress(
     val perfectToday: Int = 0,
     val wordsToday: Int = 0,
     val correctToday: Int = 0,
+    /** Verdiente PlayStation-Minuten: eine pro abgeschlossener Lektion. */
+    val playMinutes: Int = 0,
     /** Bereits geöffnete Schatztruhen und daraus freigeschaltete Teile. */
     val openedChests: Set<String> = emptySet(),
     val unlockedItems: Set<String> = emptySet(),
@@ -36,6 +38,9 @@ data class UserProgress(
 
     companion object {
         const val MAX_HEARTS = 5
+
+        /** So viele Minuten Spielzeit gibt eine abgeschlossene Lektion. */
+        const val PLAY_MINUTES_PER_LESSON = 1
 
         /** Mehr XP als das pro Tag gibt freies Wiederholen nicht. */
         const val PRACTICE_XP_DAILY_CAP = 20

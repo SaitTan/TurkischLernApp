@@ -102,6 +102,10 @@ fun ProfileScreen(
                     AppColors.Blue, Modifier.weight(1f)
                 )
                 StatBox("✅", "$doneLessons", "Lektionen", AppColors.Green, Modifier.weight(1f))
+                StatBox(
+                    "🎮", "${progress.playMinutes}", "Minuten",
+                    AppColors.Purple, Modifier.weight(1f)
+                )
             }
         }
 
@@ -420,6 +424,27 @@ fun ProfileScreen(
                             )
                         }
                     }
+                    Text("Spielzeit", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Verdient: ${progress.playMinutes} Minuten PlayStation " +
+                            "(1 Minute je abgeschlossener Lektion).",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(5, 15, 30).forEach { minuten ->
+                            GoalChip(
+                                selected = false,
+                                label = "-$minuten min",
+                                onClick = {
+                                    scope.launch {
+                                        container.progressRepository.usePlayMinutes(minuten)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
                     SettingButton("🗑️ Fortschritt zurücksetzen", AppColors.Red) {
                         showReset = true
                     }

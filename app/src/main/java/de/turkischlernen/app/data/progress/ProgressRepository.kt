@@ -31,6 +31,7 @@ class ProgressRepository(context: Context) {
         val perfectToday = intPreferencesKey("perfect_today")
         val wordsToday = intPreferencesKey("words_today")
         val correctToday = intPreferencesKey("correct_today")
+        val playMinutes = intPreferencesKey("play_minutes")
         val openedChests = stringSetPreferencesKey("opened_chests")
         val unlockedItems = stringSetPreferencesKey("unlocked_items")
         val dailyGoal = intPreferencesKey("daily_goal")
@@ -57,6 +58,7 @@ class ProgressRepository(context: Context) {
             perfectToday = this[Keys.perfectToday] ?: 0,
             wordsToday = this[Keys.wordsToday] ?: 0,
             correctToday = this[Keys.correctToday] ?: 0,
+            playMinutes = this[Keys.playMinutes] ?: 0,
             openedChests = this[Keys.openedChests] ?: emptySet(),
             unlockedItems = this[Keys.unlockedItems] ?: emptySet(),
             dailyGoal = this[Keys.dailyGoal] ?: 30,
@@ -132,6 +134,9 @@ class ProgressRepository(context: Context) {
                 prefs[Keys.practiceXpToday] = practiceToday + earnedXp
             }
             if (lessonId != null) {
+                // Jede abgeschlossene Lektion bringt Spielzeit.
+                prefs[Keys.playMinutes] =
+                    (prefs[Keys.playMinutes] ?: 0) + UserProgress.PLAY_MINUTES_PER_LESSON
                 prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
                 if (mistakes == 0) {
                     prefs[Keys.perfect] = (prefs[Keys.perfect] ?: emptySet()) + lessonId
@@ -179,6 +184,14 @@ class ProgressRepository(context: Context) {
 
     suspend fun setDailyGoal(goal: Int) {
         store.edit { prefs -> prefs[Keys.dailyGoal] = goal }
+    }
+
+    /** Eltern-Bereich: eingelöste Spielzeit abziehen. */
+    suspend fun usePlayMinutes(minutes: Int) {
+        store.edit { prefs ->
+            val rest = (prefs[Keys.playMinutes] ?: 0) - minutes
+            prefs[Keys.playMinutes] = rest.coerceAtLeast(0)
+        }
     }
 
     /**

@@ -82,6 +82,8 @@ fun LessonCompleteScreen(
     streakIncreased: Boolean,
     resultsReady: Boolean,
     mascotPhrase: MascotPhrase?,
+    /** Verdiente Spielzeit; bei freiem Wiederholen 0. */
+    playMinutes: Int,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -216,6 +218,26 @@ fun LessonCompleteScreen(
                         .popIn(stage >= STAGE_STREAK)
                 ) {
                     Text("$streakDays", style = MaterialTheme.typography.titleLarge, color = AppColors.Orange)
+                }
+            }
+
+            if (playMinutes > 0) {
+                Spacer(Modifier.height(18.dp))
+                Row(
+                    Modifier.popIn(stage >= STAGE_STREAK),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🎮", fontSize = 28.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (playMinutes == 1) {
+                            "+1 Minute PlayStation"
+                        } else {
+                            "+$playMinutes Minuten PlayStation"
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AppColors.Purple
+                    )
                 }
             }
 

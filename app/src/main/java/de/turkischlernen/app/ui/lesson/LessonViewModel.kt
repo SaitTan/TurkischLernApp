@@ -21,6 +21,7 @@ import de.turkischlernen.app.data.progress.Achievements
 import de.turkischlernen.app.data.progress.LessonLogic
 import de.turkischlernen.app.data.progress.ProgressLogic
 import de.turkischlernen.app.data.progress.ProgressRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -149,12 +150,21 @@ class LessonViewModel(
             haptics.success()
             answerState = AnswerState.Correct
             viewModelScope.launch {
+                // Erst der Prüfungs-Ton, direkt danach die Stimme des Kangal.
+                delay(VOICE_DELAY_MS)
+                sounds.kangalCorrect()
+            }
+            viewModelScope.launch {
                 itemIds.forEach { repository.clearMistake(it) }
             }
         } else {
             mascotPhrase = MascotPhrases.pick(MascotPhrases.comfort, mascotPhrase, random)
             sounds.wrong()
             haptics.error()
+            viewModelScope.launch {
+                delay(VOICE_DELAY_MS)
+                sounds.kangalWrong()
+            }
             mistakes++
             answerState = AnswerState.Wrong(correctAnswer)
             current?.let { repeatQueue.add(it) }
@@ -223,6 +233,9 @@ class LessonViewModel(
     companion object {
         const val PRACTICE_ID = "practice"
         private const val PRACTICE_XP = 10
+
+        /** Abstand zwischen Prüfungs-Ton und Kangal-Stimme. */
+        private const val VOICE_DELAY_MS = 420L
 
         fun factory(
             repository: ProgressRepository,
