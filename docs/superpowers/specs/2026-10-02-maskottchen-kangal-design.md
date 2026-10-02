@@ -30,8 +30,9 @@ Schatztruhen und Tagesaufgaben (Etappe 3), Lernpfad-Animationen (Etappe 4).
 
 ### Auftritte
 
-- **Lektion:** etwa 64 dp, links in der Rückmeldungs-Leiste unten. `HAPPY` bei richtiger,
-  `SAD` bei falscher Antwort, sonst `IDLE`.
+- **Lektion:** etwa 64 dp, dauerhaft sichtbar links in der unteren Leiste – also auch
+  während der Frage (dann `IDLE` neben dem Knopf „PRÜFEN“). `HAPPY` bei richtiger,
+  `SAD` bei falscher Antwort. Die Sprechblase erscheint nur nach einer Antwort.
 - **Lektions-Abschluss:** groß, `CHEER`, neben Pokal/Konfetti (ersetzt das Emoji nicht).
 - **Lernpfad:** `WAVE`, neben dem aktuellen Knoten ("LOS!"). Bei gesperrten Lektionen nicht sichtbar.
 - **Profil:** oben statt der Eule, `IDLE`.
