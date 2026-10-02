@@ -63,7 +63,8 @@ object AvatarOptions {
 
     const val DEFAULT_FUR = "sand"
     const val DEFAULT_ACCESSORY = "keins"
-    const val DEFAULT_NAME = "Kangal"
+    /** Leer: Im Profil steht dann "Mein Türkisch", bis ein Name eingetippt wird. */
+    const val DEFAULT_NAME = ""
     const val DEFAULT_SKIN = "mittel"
     const val DEFAULT_HAIR = "kurz"
     const val DEFAULT_HAIR_COLOR = "schwarz"

@@ -14,7 +14,7 @@ class AvatarConfigTest {
         val avatar = AvatarConfig()
         assertEquals("sand", avatar.fur.id)
         assertEquals("keins", avatar.accessory.id)
-        assertEquals("Kangal", avatar.name)
+        assertTrue("Der Name ist anfangs leer", avatar.name.isEmpty())
     }
 
     @Test
