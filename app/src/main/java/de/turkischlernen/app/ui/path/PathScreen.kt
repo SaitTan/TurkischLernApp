@@ -314,7 +314,7 @@ private fun LessonNode(
             if (state == NodeState.CURRENT) {
                 Kangal(
                     mood = MascotMood.WAVE,
-                    size = 56.dp,
+                    size = 70.dp,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .offset(x = 62.dp)

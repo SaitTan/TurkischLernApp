@@ -5,8 +5,13 @@ Stand: 2026-10-02 · Status: freigegeben
 ## Ziel
 
 Ein Maskottchen begleitet das Kind durch die App und reagiert auf das, was es tut –
-wie die Figur in Duolingo, aber als eigener Charakter: ein **Kangal**, der türkische
-Hirtenhund. Sandfarbener Körper, schwarze Schnauzen-Maske, Schlappohren.
+wie die Figur in Duolingo, aber als eigener Charakter: ein **Sivas-Kangal**.
+
+Die Figur stammt aus einer vom Projektinhaber beigesteuerten SVG-Zeichnung
+(`kangal-maskottchen.js`): Die Pfaddaten sind unverändert nach Compose übernommen,
+die CSS-Animationen sind als Compose-Animationen nachgebaut. Dadurch bleibt die App
+nativ – kein WebView, keine neue Bibliothek. Enthalten sind Schattenwurf,
+Augenbrauen, Wangenröte, Zunge und Glitzer-Sterne beim Jubeln.
 
 Die App ist privat (nur für den Sohn des Projektinhabers), Ziel ist größtmögliche
 Nähe zum Duolingo-Gefühl.
@@ -30,9 +35,10 @@ Schatztruhen und Tagesaufgaben (Etappe 3), Lernpfad-Animationen (Etappe 4).
 
 ### Auftritte
 
-- **Lektion:** etwa 64 dp, dauerhaft sichtbar links in der unteren Leiste – also auch
-  während der Frage (dann `IDLE` neben dem Knopf „PRÜFEN“). `HAPPY` bei richtiger,
-  `SAD` bei falscher Antwort. Die Sprechblase erscheint nur nach einer Antwort.
+- **Lektion:** groß (165 dp) und mittig **oben**, direkt unter dem Fortschrittsbalken;
+  die Frage und die Antworten stehen darunter. Dauerhaft sichtbar, auch während der
+  Frage (dann `IDLE`). `HAPPY` bei richtiger, `SAD` bei falscher Antwort.
+  Die Sprechblase steht rechts neben dem Hund und erscheint nur nach einer Antwort.
 - **Lektions-Abschluss:** groß, `CHEER`, neben Pokal/Konfetti (ersetzt das Emoji nicht).
 - **Lernpfad:** `WAVE`, neben dem aktuellen Knoten ("LOS!"). Bei gesperrten Lektionen nicht sichtbar.
 - **Profil:** oben statt der Eule, `IDLE`.

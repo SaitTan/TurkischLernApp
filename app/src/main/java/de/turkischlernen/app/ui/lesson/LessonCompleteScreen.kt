@@ -146,7 +146,7 @@ fun LessonCompleteScreen(
             ) {
                 Kangal(
                     mood = MascotMood.CHEER,
-                    size = 104.dp,
+                    size = 150.dp,
                     modifier = Modifier.popIn(stage >= STAGE_TROPHY)
                 )
                 Spacer(Modifier.width(8.dp))

@@ -68,7 +68,7 @@ fun ProfileScreen(
     ) {
         item(key = "head") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Kangal(mood = MascotMood.IDLE, size = 110.dp)
+                Kangal(mood = MascotMood.IDLE, size = 150.dp)
                 Text("Mein Türkisch", style = MaterialTheme.typography.headlineMedium)
                 Text(
                     "Serie: ${progress.streakDays} Tage",
