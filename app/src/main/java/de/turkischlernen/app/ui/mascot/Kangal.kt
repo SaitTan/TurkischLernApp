@@ -428,7 +428,7 @@ private fun DrawScope.drawHead(
 
     translate(top = headDrop) {
         rotate(degrees = headRotation, pivot = Offset(100f, 116f)) {
-            if (accessoryId == "schal") drawScarf()
+            if (accessoryId == "schal" || accessoryId == "halstuch") drawScarf()
 
             drawEars(mood, palette, flap)
 
@@ -462,9 +462,10 @@ private fun DrawScope.drawHead(
             drawMouth(mood)
 
             when (accessoryId) {
-                "muetze" -> drawCap()
+                "muetze", "wintermuetze" -> drawCap()
                 "brille" -> drawGlasses()
                 "schleife" -> drawBow()
+                "krone" -> drawCrown()
             }
         }
     }
@@ -616,6 +617,24 @@ private fun DrawScope.drawScarf() {
         cornerRadius = CornerRadius(8f, 8f),
         style = Stroke(2f)
     )
+}
+
+/** Goldene Krone auf dem Kopf. */
+private fun DrawScope.drawCrown() {
+    val gold = Color(0xFFFFC107)
+    val crown = Path().apply {
+        moveTo(68f, 52f)
+        lineTo(76f, 28f)
+        lineTo(88f, 46f)
+        lineTo(100f, 24f)
+        lineTo(112f, 46f)
+        lineTo(124f, 28f)
+        lineTo(132f, 52f)
+        close()
+    }
+    drawPath(crown, color = gold)
+    drawPath(crown, color = Line, style = Stroke(2.5f, join = StrokeJoin.Round))
+    drawCircle(color = Color(0xFFE53935), radius = 3.5f, center = Offset(100f, 44f))
 }
 
 /** Funkelnde Sterne beim Jubeln. */

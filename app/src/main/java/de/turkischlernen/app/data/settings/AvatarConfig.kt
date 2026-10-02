@@ -13,18 +13,23 @@ data class FurOption(
     val creamHex: Long
 )
 
-/** Ein Accessoire, das der Hund tragen kann. [emoji] steht auf der Auswahlkachel. */
+/**
+ * Ein Accessoire, das der Hund tragen kann. [emoji] steht auf der Auswahlkachel.
+ * [locked] = erst nach einem Fund aus einer Schatztruhe verfügbar.
+ */
 data class AccessoryOption(
     val id: String,
     val label: String,
-    val emoji: String
+    val emoji: String,
+    val locked: Boolean = false
 )
 
 /** Eine einfarbige Auswahl (Hautton, Haarfarbe, T-Shirt). */
 data class ColorOption(
     val id: String,
     val label: String,
-    val hex: Long
+    val hex: Long,
+    val locked: Boolean = false
 )
 
 /** Eine Frisur. [emoji] steht auf der Auswahlkachel. */
@@ -86,7 +91,10 @@ object AvatarOptions {
         AccessoryOption("muetze", "Mütze", "🧢"),
         AccessoryOption("brille", "Sonnenbrille", "🕶️"),
         AccessoryOption("schleife", "Schleife", "🎀"),
-        AccessoryOption("schal", "Fußballschal", "🧣")
+        AccessoryOption("schal", "Fußballschal", "🧣"),
+        AccessoryOption("krone", "Krone", "👑", locked = true),
+        AccessoryOption("halstuch", "Halstuch", "🧶", locked = true),
+        AccessoryOption("wintermuetze", "Wintermütze", "🎩", locked = true)
     )
 
     val skins = listOf(
@@ -118,8 +126,24 @@ object AvatarOptions {
         ColorOption("gruen", "Grün", 0xFF58CC02),
         ColorOption("rot", "Rot", 0xFFFF4B4B),
         ColorOption("gelb", "Gelb", 0xFFFFC800),
-        ColorOption("lila", "Lila", 0xFFCE82FF)
+        ColorOption("lila", "Lila", 0xFFCE82FF),
+        ColorOption("regenbogen", "Regenbogen", 0xFF7C4DFF, locked = true),
+        ColorOption("gold", "Gold", 0xFFFFC107, locked = true)
     )
+
+    /** Alle Teile, die man erst aus einer Schatztruhe bekommt. */
+    val lockedItemIds: List<String> =
+        accessories.filter { it.locked }.map { it.id } + shirts.filter { it.locked }.map { it.id }
+
+    /** Anzeigename eines freischaltbaren Teils. */
+    fun itemLabel(id: String): String =
+        accessories.firstOrNull { it.id == id }?.label
+            ?: shirts.firstOrNull { it.id == id }?.label
+            ?: id
+
+    /** Freie Teile sind immer verfügbar, gesperrte erst nach dem Fund. */
+    fun isUnlocked(id: String, unlocked: Set<String>): Boolean =
+        id !in lockedItemIds || id in unlocked
 
     fun fur(id: String): FurOption = furs.firstOrNull { it.id == id } ?: furs.first()
 

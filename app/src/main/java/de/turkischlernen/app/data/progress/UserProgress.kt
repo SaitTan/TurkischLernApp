@@ -8,6 +8,14 @@ data class UserProgress(
     val xpToday: Int = 0,
     /** Heute schon durch freies Wiederholen gesammelte XP (begrenzt). */
     val practiceXpToday: Int = 0,
+    /** Tageszähler für die Tagesaufgaben – werden beim Datumswechsel zurückgesetzt. */
+    val lessonsToday: Int = 0,
+    val perfectToday: Int = 0,
+    val wordsToday: Int = 0,
+    val correctToday: Int = 0,
+    /** Bereits geöffnete Schatztruhen und daraus freigeschaltete Teile. */
+    val openedChests: Set<String> = emptySet(),
+    val unlockedItems: Set<String> = emptySet(),
     val dailyGoal: Int = 30,
     val streakDays: Int = 0,
     val lastActiveDate: String = "",

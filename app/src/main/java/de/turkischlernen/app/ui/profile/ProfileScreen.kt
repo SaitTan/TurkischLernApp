@@ -188,7 +188,12 @@ fun ProfileScreen(
                 }
 
                 Text("T-Shirt", style = MaterialTheme.typography.titleMedium)
-                ColorPickerRow(AvatarOptions.shirts, settings.avatar.shirtId, circleSize = 40) { id ->
+                ColorPickerRow(
+                    options = AvatarOptions.shirts,
+                    selectedId = settings.avatar.shirtId,
+                    circleSize = 40,
+                    unlockedItems = progress.unlockedItems
+                ) { id ->
                     scope.launch { container.settingsRepository.setAvatarShirt(id) }
                 }
 
@@ -248,6 +253,7 @@ fun ProfileScreen(
                 Text("Accessoire", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     AvatarOptions.accessories.forEach { accessory ->
+                        val frei = AvatarOptions.isUnlocked(accessory.id, progress.unlockedItems)
                         val selected = settings.avatar.accessoryId == accessory.id
                         Box(
                             Modifier
@@ -260,14 +266,14 @@ fun ProfileScreen(
                                     else MaterialTheme.colorScheme.outline,
                                     shape = RoundedCornerShape(14.dp)
                                 )
-                                .clickable {
+                                .clickable(enabled = frei) {
                                     scope.launch {
                                         container.settingsRepository.setAvatarAccessory(accessory.id)
                                     }
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(accessory.emoji, fontSize = 22.sp)
+                            Text(if (frei) accessory.emoji else "🔒", fontSize = 22.sp)
                         }
                     }
                 }
@@ -541,11 +547,13 @@ private fun ColorPickerRow(
     options: List<ColorOption>,
     selectedId: String,
     circleSize: Int = 46,
+    unlockedItems: Set<String> = emptySet(),
     onPick: (String) -> Unit
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         options.forEach { option ->
             val selected = option.id == selectedId
+            val frei = AvatarOptions.isUnlocked(option.id, unlockedItems)
             Box(
                 Modifier
                     .size(circleSize.dp)
@@ -556,8 +564,11 @@ private fun ColorPickerRow(
                         color = if (selected) AppColors.Green else MaterialTheme.colorScheme.outline,
                         shape = CircleShape
                     )
-                    .clickable { onPick(option.id) }
-            )
+                    .clickable(enabled = frei) { onPick(option.id) },
+                contentAlignment = Alignment.Center
+            ) {
+                if (!frei) Text("🔒", fontSize = 18.sp)
+            }
         }
     }
 }

@@ -207,7 +207,8 @@ class LessonViewModel(
                 lessonId = lesson?.id,
                 earnedXp = earnedXp,
                 mistakes = mistakes,
-                practicedItemIds = lesson?.itemIds ?: practicedIds
+                practicedItemIds = lesson?.itemIds ?: practicedIds,
+                correctAnswers = correctAnswers
             )
             val after = repository.progress.first()
             newAchievements = LessonLogic.newlyUnlocked(
