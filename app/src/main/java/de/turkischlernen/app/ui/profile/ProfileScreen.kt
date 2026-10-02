@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,10 +15,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
+import de.turkischlernen.app.data.settings.AvatarOptions
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.mascot.Kangal
 import de.turkischlernen.app.ui.mascot.MascotMood
@@ -57,6 +62,8 @@ fun ProfileScreen(
     var showReset by remember { mutableStateOf(false) }
     var showParentArea by remember { mutableStateOf(false) }
     val settings by container.settingsRepository.current.collectAsState()
+    // Eigener Zustand, damit der Cursor beim Tippen nicht springt.
+    var nameInput by remember { mutableStateOf(settings.avatar.name) }
 
     val achievements = Achievements.forProgress(progress)
     val doneLessons = progress.completedLessons.size
@@ -68,8 +75,11 @@ fun ProfileScreen(
     ) {
         item(key = "head") {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Kangal(mood = MascotMood.IDLE, size = 150.dp)
-                Text("Mein Türkisch", style = MaterialTheme.typography.headlineMedium)
+                Kangal(mood = MascotMood.IDLE, size = 150.dp, avatar = settings.avatar)
+                Text(
+                    text = settings.avatar.name.ifBlank { "Mein Türkisch" },
+                    style = MaterialTheme.typography.headlineMedium
+                )
                 Text(
                     "Serie: ${progress.streakDays} Tage",
                     style = MaterialTheme.typography.bodyMedium,
@@ -108,6 +118,81 @@ fun ProfileScreen(
                         "${progress.learnedItems.size} von ${Curriculum.totalItemCount} Wörtern",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        item(key = "avatar") {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Mein Hund", style = MaterialTheme.typography.titleLarge)
+
+                Text("Fellfarbe", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.furs.forEach { fur ->
+                        val selected = settings.avatar.furId == fur.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(Color(fur.furHex))
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = CircleShape
+                                )
+                                .clickable {
+                                    scope.launch { container.settingsRepository.setAvatarFur(fur.id) }
+                                }
+                        )
+                    }
+                }
+
+                Text("Accessoire", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    AvatarOptions.accessories.forEach { accessory ->
+                        val selected = settings.avatar.accessoryId == accessory.id
+                        Box(
+                            Modifier
+                                .size(46.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .border(
+                                    width = if (selected) 4.dp else 2.dp,
+                                    color = if (selected) AppColors.Green
+                                    else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(14.dp)
+                                )
+                                .clickable {
+                                    scope.launch {
+                                        container.settingsRepository.setAvatarAccessory(accessory.id)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(accessory.emoji, fontSize = 22.sp)
+                        }
+                    }
+                }
+
+                Text("Name", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = nameInput,
+                    onValueChange = { eingabe ->
+                        val gekuerzt = AvatarOptions.cleanName(eingabe)
+                        nameInput = gekuerzt
+                        scope.launch { container.settingsRepository.setAvatarName(gekuerzt) }
+                    },
+                    singleLine = true,
+                    placeholder = { Text(AvatarOptions.DEFAULT_NAME) },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }

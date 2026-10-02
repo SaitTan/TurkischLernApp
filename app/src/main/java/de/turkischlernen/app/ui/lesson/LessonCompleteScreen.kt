@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -125,7 +126,8 @@ fun LessonCompleteScreen(
 
     // Jubelruf des Maskottchens – hinten angestellt, damit nichts abgeschnitten wird.
     val speech = LocalAppContainer.current.speech
-    val soundOn = LocalAppContainer.current.settingsRepository.current.value.soundEnabled
+    val settings by LocalAppContainer.current.settingsRepository.current.collectAsState()
+    val soundOn = settings.soundEnabled
     LaunchedEffect(mascotPhrase, stage) {
         if (stage >= STAGE_TITLE && mascotPhrase != null && soundOn) {
             speech.speak(mascotPhrase.tr, slow = false, queue = true)
@@ -147,6 +149,7 @@ fun LessonCompleteScreen(
                 Kangal(
                     mood = MascotMood.CHEER,
                     size = 150.dp,
+                    avatar = settings.avatar,
                     modifier = Modifier.popIn(stage >= STAGE_TROPHY)
                 )
                 Spacer(Modifier.width(8.dp))

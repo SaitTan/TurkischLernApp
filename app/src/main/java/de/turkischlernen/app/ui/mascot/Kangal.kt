@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -31,22 +32,20 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import de.turkischlernen.app.data.settings.AvatarConfig
+import de.turkischlernen.app.ui.components.darker
 
 /*
- * Der Sivas-Kangal als Vorlage aus einer SVG-Zeichnung: die Pfaddaten sind
- * unverändert übernommen, die Animationen aus dem CSS sind in Compose nachgebaut.
- * Gezeichnet wird im Koordinatensystem 200 × 220 (viewBox) und auf die
- * gewünschte Größe skaliert – dadurch bleiben alle Proportionen erhalten.
+ * Der Sivas-Kangal nach einer SVG-Vorlage: die Pfaddaten sind unverändert
+ * übernommen, die CSS-Animationen sind in Compose nachgebaut. Gezeichnet wird im
+ * Koordinatensystem 200 × 220 (viewBox) und auf die gewünschte Größe skaliert.
+ * Fellfarbe und Accessoire kommen aus dem Avatar des Kindes.
  */
 
 private const val VIEW_W = 200f
 private const val VIEW_H = 220f
 
-private val Fur = Color(0xFFE3B87C)
-private val FurDark = Color(0xFFC9975A)
-private val Cream = Color(0xFFF7E6C6)
 private val Line = Color(0xFF5B3D28)
-private val Ear = Color(0xFF4B3326)
 private val MaskColor = Color(0xFF4A3A33)
 private val Ink = Color(0xFF140D0A)
 private val Nose = Color(0xFF1C1411)
@@ -61,6 +60,22 @@ private val SparkleBlue = Color(0xFF5EC8F2)
 private val SparkleBlueLine = Color(0xFF2C93BD)
 private val SparklePink = Color(0xFFF27A8A)
 private val SparklePinkLine = Color(0xFFB9475A)
+
+private val CapColor = Color(0xFFE53935)
+private val CapBrim = Color(0xFFB71C1C)
+private val GlassColor = Color(0xFF26262B)
+private val BowColor = Color(0xFFEC407A)
+private val BowDark = Color(0xFFC2185B)
+private val ScarfColor = Color(0xFFD32F2F)
+private val ScarfStripe = Color(0xFFFFFFFF)
+
+/** Die vier zusammengehörenden Farbtöne eines Fells. */
+private data class KangalPalette(
+    val fur: Color,
+    val furDark: Color,
+    val cream: Color,
+    val ear: Color
+)
 
 private fun svgPath(data: String): Path = PathParser().parsePathString(data).toPath()
 
@@ -113,17 +128,31 @@ private val SparkleBigPath by lazy { svgPath("M30 60 l4 9 9 4 -9 4 -4 9 -4 -9 -9
 private val SparkleSmall2Path by lazy { svgPath("M170 50 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z") }
 private val SparkleSmall3Path by lazy { svgPath("M176 128 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3z") }
 private val SparkleSmall4Path by lazy { svgPath("M22 134 l3 6 6 3 -6 3 -3 6 -3 -6 -6 -3 6 -3z") }
+private val CapDomePath by lazy { svgPath("M63 55 C 66 29, 134 29, 137 55 Z") }
+private val BowLeftPath by lazy { svgPath("M56 44 L70 52 L56 60 Z") }
+private val BowRightPath by lazy { svgPath("M84 44 L70 52 L84 60 Z") }
 
 /**
- * Der Kangal. [mood] bestimmt Haltung und Bewegung, [size] die Kantenlänge.
- * Setzt man dieselbe Stimmung erneut, läuft der Hüpfer erneut.
+ * Der Kangal. [mood] bestimmt Haltung und Bewegung, [avatar] Fell und Accessoire,
+ * [size] die Kantenlänge. Setzt man dieselbe Stimmung erneut, läuft der Hüpfer erneut.
  */
 @Composable
 fun Kangal(
     mood: MascotMood,
     modifier: Modifier = Modifier,
-    size: Dp = 150.dp
+    size: Dp = 150.dp,
+    avatar: AvatarConfig = AvatarConfig()
 ) {
+    val palette = remember(avatar.furId) {
+        val fur = avatar.fur
+        KangalPalette(
+            fur = Color(fur.furHex),
+            furDark = Color(fur.furDarkHex),
+            cream = Color(fur.creamHex),
+            ear = Color(fur.furDarkHex).darker(0.62f)
+        )
+    }
+
     val transition = rememberInfiniteTransition(label = "kangal")
 
     val breath by transition.animateFloat(
@@ -252,6 +281,8 @@ fun Kangal(
         }) {
             drawKangal(
                 mood = mood,
+                palette = palette,
+                accessoryId = avatar.accessoryId,
                 breath = breath,
                 wag = wagPhase,
                 eyeOpen = eyeOpen,
@@ -267,6 +298,8 @@ fun Kangal(
 
 private fun DrawScope.drawKangal(
     mood: MascotMood,
+    palette: KangalPalette,
+    accessoryId: String,
     breath: Float,
     wag: Float,
     eyeOpen: Float,
@@ -283,57 +316,56 @@ private fun DrawScope.drawKangal(
     // Schatten wird kleiner, wenn der Hund in der Luft ist.
     val shadowScale = 1f - 0.4f * hop
     scale(scaleX = shadowScale, scaleY = shadowScale, pivot = Offset(100f, 207f)) {
-        drawOval(
-            color = ShadowColor,
-            topLeft = Offset(46f, 200f),
-            size = Size(108f, 14f)
-        )
+        drawOval(color = ShadowColor, topLeft = Offset(46f, 200f), size = Size(108f, 14f))
     }
 
     if (jumping) drawSparkles(sparkle)
 
     translate(top = -lift) {
         scale(scaleX = squash, scaleY = 2f - squash, pivot = Offset(100f, 206f)) {
-            drawTail(mood, wag)
-            drawTorso(mood, breath)
-            drawLegs(mood, wave, earFlap)
-            drawHead(mood, eyeOpen, earFlap, headIdle, wave)
+            drawTail(mood, palette, wag)
+            drawTorso(mood, palette, breath)
+            drawLegs(mood, palette, wave, earFlap)
+            drawHead(mood, palette, accessoryId, eyeOpen, earFlap, headIdle, wave)
         }
     }
 }
 
 /** Buschiger Schwanz: dunkle Kontur, hellere Füllung darüber. */
-private fun DrawScope.drawTail(mood: MascotMood, wag: Float) {
+private fun DrawScope.drawTail(mood: MascotMood, palette: KangalPalette, wag: Float) {
     val degrees = when (mood) {
         MascotMood.SAD -> 72f
         MascotMood.HAPPY, MascotMood.CHEER -> wag * 16f
-        MascotMood.WAVE -> wag * 8f
-        else -> wag * 8f + 1f
+        else -> wag * 8f
     }
     rotate(degrees = degrees, pivot = Offset(133f, 178f)) {
         drawPath(TailPath, color = Line, style = Stroke(17f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        drawPath(TailPath, color = Fur, style = Stroke(11.5f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        drawPath(
+            TailPath,
+            color = palette.fur,
+            style = Stroke(11.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
     }
 }
 
 /** Rumpf mit Brustfleck, Hüften und Hinterpfoten. */
-private fun DrawScope.drawTorso(mood: MascotMood, breath: Float) {
+private fun DrawScope.drawTorso(mood: MascotMood, palette: KangalPalette, breath: Float) {
     val amount = if (mood == MascotMood.SAD) 0.5f else 1f
     scale(
         scaleX = 1f + 0.018f * breath * amount,
         scaleY = 1f + 0.035f * breath * amount,
         pivot = Offset(100f, 200f)
     ) {
-        drawPath(TorsoPath, color = Fur)
+        drawPath(TorsoPath, color = palette.fur)
         drawPath(TorsoPath, color = Line, style = Stroke(2.5f, join = StrokeJoin.Round))
-        drawPath(ChestPath, color = Cream)
+        drawPath(ChestPath, color = palette.cream)
 
-        drawOval(Fur, Offset(48f, 173f), Size(40f, 30f))
-        drawOval(Fur, Offset(112f, 173f), Size(40f, 30f))
-        drawPath(HipLeftPath, color = FurDark, style = Stroke(2f))
-        drawPath(HipRightPath, color = FurDark, style = Stroke(2f))
-        drawOval(Cream, Offset(43f, 194.5f), Size(26f, 13f))
-        drawOval(Cream, Offset(131f, 194.5f), Size(26f, 13f))
+        drawOval(palette.fur, Offset(48f, 173f), Size(40f, 30f))
+        drawOval(palette.fur, Offset(112f, 173f), Size(40f, 30f))
+        drawPath(HipLeftPath, color = palette.furDark, style = Stroke(2f))
+        drawPath(HipRightPath, color = palette.furDark, style = Stroke(2f))
+        drawOval(palette.cream, Offset(43f, 194.5f), Size(26f, 13f))
+        drawOval(palette.cream, Offset(131f, 194.5f), Size(26f, 13f))
     }
 }
 
@@ -341,7 +373,7 @@ private fun DrawScope.drawTorso(mood: MascotMood, breath: Float) {
  * Vorderbeine. Beim Jubeln werden sie zu erhobenen Pfoten, beim Winken
  * hebt sich die rechte Pfote.
  */
-private fun DrawScope.drawLegs(mood: MascotMood, wave: Float, flap: Float) {
+private fun DrawScope.drawLegs(mood: MascotMood, palette: KangalPalette, wave: Float, flap: Float) {
     val leftDegrees = if (mood == MascotMood.CHEER) 118f + 24f * flap else 0f
     val rightDegrees = when (mood) {
         MascotMood.CHEER -> -(118f + 24f * (1f - flap))
@@ -349,25 +381,25 @@ private fun DrawScope.drawLegs(mood: MascotMood, wave: Float, flap: Float) {
         else -> 0f
     }
 
-    rotate(degrees = leftDegrees, pivot = Offset(88f, 150f)) { drawLeg(80f, 88f) }
-    rotate(degrees = rightDegrees, pivot = Offset(112f, 150f)) { drawLeg(104f, 112f) }
+    rotate(degrees = leftDegrees, pivot = Offset(88f, 150f)) { drawLeg(palette, 80f, 88f) }
+    rotate(degrees = rightDegrees, pivot = Offset(112f, 150f)) { drawLeg(palette, 104f, 112f) }
 }
 
-private fun DrawScope.drawLeg(left: Float, pawCenterX: Float) {
+private fun DrawScope.drawLeg(palette: KangalPalette, left: Float, pawCenterX: Float) {
     drawRoundRect(
-        color = Fur,
+        color = palette.fur,
         topLeft = Offset(left, 144f),
         size = Size(16f, 54f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+        cornerRadius = CornerRadius(8f, 8f)
     )
     drawRoundRect(
         color = Line,
         topLeft = Offset(left, 144f),
         size = Size(16f, 54f),
-        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f),
+        cornerRadius = CornerRadius(8f, 8f),
         style = Stroke(2.5f, join = StrokeJoin.Round)
     )
-    drawOval(Cream, Offset(pawCenterX - 11.5f, 192f), Size(23f, 14f))
+    drawOval(palette.cream, Offset(pawCenterX - 11.5f, 192f), Size(23f, 14f))
     drawOval(
         color = Line,
         topLeft = Offset(pawCenterX - 11.5f, 192f),
@@ -376,9 +408,11 @@ private fun DrawScope.drawLeg(left: Float, pawCenterX: Float) {
     )
 }
 
-/** Kopf mit Ohren, Maske, Augen, Nase und Mund. */
+/** Kopf mit Ohren, Maske, Augen, Nase, Mund und Accessoire. */
 private fun DrawScope.drawHead(
     mood: MascotMood,
+    palette: KangalPalette,
+    accessoryId: String,
     eyeOpen: Float,
     flap: Float,
     headIdle: Float,
@@ -394,11 +428,13 @@ private fun DrawScope.drawHead(
 
     translate(top = headDrop) {
         rotate(degrees = headRotation, pivot = Offset(100f, 116f)) {
-            drawEars(mood, flap)
+            if (accessoryId == "schal") drawScarf()
 
-            drawPath(HeadPath, color = Fur)
+            drawEars(mood, palette, flap)
+
+            drawPath(HeadPath, color = palette.fur)
             drawPath(HeadPath, color = Line, style = Stroke(2.5f))
-            drawPath(BlazePath, color = Cream.copy(alpha = 0.55f))
+            drawPath(BlazePath, color = palette.cream.copy(alpha = 0.55f))
 
             // Dunklere Augenpartie
             drawOval(MaskColor.copy(alpha = 0.28f), Offset(74f, 69.5f), Size(22f, 19f))
@@ -424,11 +460,17 @@ private fun DrawScope.drawHead(
             drawOval(Color.White.copy(alpha = 0.55f), Offset(94.4f, 89.6f), Size(5.2f, 2.4f))
 
             drawMouth(mood)
+
+            when (accessoryId) {
+                "muetze" -> drawCap()
+                "brille" -> drawGlasses()
+                "schleife" -> drawBow()
+            }
         }
     }
 }
 
-private fun DrawScope.drawEars(mood: MascotMood, flap: Float) {
+private fun DrawScope.drawEars(mood: MascotMood, palette: KangalPalette, flap: Float) {
     val flapping = mood == MascotMood.HAPPY || mood == MascotMood.CHEER
     val extra = if (flapping) 20f * flap else 0f
     val sadDrop = if (mood == MascotMood.SAD) 5f else 0f
@@ -436,11 +478,11 @@ private fun DrawScope.drawEars(mood: MascotMood, flap: Float) {
 
     translate(top = sadDrop) {
         rotate(degrees = -sadTilt + extra, pivot = Offset(71f, 57f)) {
-            drawPath(EarLeftPath, color = Ear)
+            drawPath(EarLeftPath, color = palette.ear)
             drawPath(EarLeftPath, color = Line, style = Stroke(2.5f, join = StrokeJoin.Round))
         }
         rotate(degrees = sadTilt - extra, pivot = Offset(129f, 57f)) {
-            drawPath(EarRightPath, color = Ear)
+            drawPath(EarRightPath, color = palette.ear)
             drawPath(EarRightPath, color = Line, style = Stroke(2.5f, join = StrokeJoin.Round))
         }
     }
@@ -489,6 +531,91 @@ private fun DrawScope.drawTongue() {
     drawPath(TonguePath, color = TongueColor)
     drawPath(TonguePath, color = TongueLine, style = Stroke(1.4f, join = StrokeJoin.Round))
     drawPath(TongueLinePath, color = TongueLine, style = Stroke(1.2f, cap = StrokeCap.Round))
+}
+
+// --- Accessoires ---------------------------------------------------------------
+
+/** Baseball-Mütze auf dem Kopf. */
+private fun DrawScope.drawCap() {
+    drawPath(CapDomePath, color = CapColor)
+    drawPath(CapDomePath, color = Line, style = Stroke(2.5f, join = StrokeJoin.Round))
+    drawRoundRect(
+        color = CapBrim,
+        topLeft = Offset(56f, 50f),
+        size = Size(88f, 11f),
+        cornerRadius = CornerRadius(5.5f, 5.5f)
+    )
+    drawRoundRect(
+        color = Line,
+        topLeft = Offset(56f, 50f),
+        size = Size(88f, 11f),
+        cornerRadius = CornerRadius(5.5f, 5.5f),
+        style = Stroke(2f)
+    )
+    drawCircle(color = CapBrim, radius = 5f, center = Offset(100f, 30f))
+}
+
+/** Sonnenbrille über den Augen. */
+private fun DrawScope.drawGlasses() {
+    listOf(72f, 100f).forEach { left ->
+        drawRoundRect(
+            color = GlassColor,
+            topLeft = Offset(left, 69f),
+            size = Size(28f, 20f),
+            cornerRadius = CornerRadius(9f, 9f)
+        )
+        drawRoundRect(
+            color = Line,
+            topLeft = Offset(left, 69f),
+            size = Size(28f, 20f),
+            cornerRadius = CornerRadius(9f, 9f),
+            style = Stroke(2f)
+        )
+        // Lichtreflex
+        drawLine(
+            color = Color.White.copy(alpha = 0.45f),
+            start = Offset(left + 6f, 84f),
+            end = Offset(left + 17f, 73f),
+            strokeWidth = 2.5f,
+            cap = StrokeCap.Round
+        )
+    }
+    drawRect(color = GlassColor, topLeft = Offset(98f, 75f), size = Size(4f, 5f))
+}
+
+/** Schleife am linken Ohr. */
+private fun DrawScope.drawBow() {
+    drawPath(BowLeftPath, color = BowColor)
+    drawPath(BowLeftPath, color = BowDark, style = Stroke(2f, join = StrokeJoin.Round))
+    drawPath(BowRightPath, color = BowColor)
+    drawPath(BowRightPath, color = BowDark, style = Stroke(2f, join = StrokeJoin.Round))
+    drawCircle(color = BowDark, radius = 4.5f, center = Offset(70f, 52f))
+}
+
+/** Fußballschal unter dem Kopf. */
+private fun DrawScope.drawScarf() {
+    drawRoundRect(
+        color = ScarfColor,
+        topLeft = Offset(64f, 110f),
+        size = Size(72f, 16f),
+        cornerRadius = CornerRadius(8f, 8f)
+    )
+    drawRect(color = ScarfStripe, topLeft = Offset(80f, 110f), size = Size(7f, 16f))
+    drawRect(color = ScarfStripe, topLeft = Offset(108f, 110f), size = Size(7f, 16f))
+    drawRoundRect(
+        color = ScarfColor,
+        topLeft = Offset(118f, 120f),
+        size = Size(15f, 28f),
+        cornerRadius = CornerRadius(5f, 5f)
+    )
+    drawRect(color = ScarfStripe, topLeft = Offset(118f, 132f), size = Size(15f, 6f))
+    drawRoundRect(
+        color = Line,
+        topLeft = Offset(64f, 110f),
+        size = Size(72f, 16f),
+        cornerRadius = CornerRadius(8f, 8f),
+        style = Stroke(2f)
+    )
 }
 
 /** Funkelnde Sterne beim Jubeln. */

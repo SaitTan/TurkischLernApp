@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,9 @@ private val Context.settingsStore: DataStore<Preferences> by preferencesDataStor
 
 data class AppSettings(
     val soundEnabled: Boolean = true,
-    val hapticsEnabled: Boolean = true
+    val hapticsEnabled: Boolean = true,
+    /** Aussehen und Name des Maskottchens. */
+    val avatar: AvatarConfig = AvatarConfig()
 )
 
 /**
@@ -34,6 +37,9 @@ class SettingsRepository(context: Context) {
     private object Keys {
         val sound = booleanPreferencesKey("sound_enabled")
         val haptics = booleanPreferencesKey("haptics_enabled")
+        val avatarFur = stringPreferencesKey("avatar_fur")
+        val avatarAccessory = stringPreferencesKey("avatar_accessory")
+        val avatarName = stringPreferencesKey("avatar_name")
     }
 
     /** Synchron lesbar, damit Sounds und Vibration ohne Verzögerung prüfen können. */
@@ -41,7 +47,12 @@ class SettingsRepository(context: Context) {
         .map { prefs ->
             AppSettings(
                 soundEnabled = prefs[Keys.sound] ?: true,
-                hapticsEnabled = prefs[Keys.haptics] ?: true
+                hapticsEnabled = prefs[Keys.haptics] ?: true,
+                avatar = AvatarConfig(
+                    furId = prefs[Keys.avatarFur] ?: AvatarOptions.DEFAULT_FUR,
+                    accessoryId = prefs[Keys.avatarAccessory] ?: AvatarOptions.DEFAULT_ACCESSORY,
+                    name = prefs[Keys.avatarName] ?: AvatarOptions.DEFAULT_NAME
+                )
             )
         }
         .catch { emit(AppSettings()) }
@@ -53,5 +64,18 @@ class SettingsRepository(context: Context) {
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
         store.edit { prefs -> prefs[Keys.haptics] = enabled }
+    }
+
+    suspend fun setAvatarFur(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarFur] = id }
+    }
+
+    suspend fun setAvatarAccessory(id: String) {
+        store.edit { prefs -> prefs[Keys.avatarAccessory] = id }
+    }
+
+    /** Name des Hundes – zu lange Eingaben werden gekürzt. */
+    suspend fun setAvatarName(name: String) {
+        store.edit { prefs -> prefs[Keys.avatarName] = AvatarOptions.cleanName(name) }
     }
 }

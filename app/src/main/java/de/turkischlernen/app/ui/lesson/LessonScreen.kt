@@ -204,7 +204,8 @@ fun LessonScreen(
                     is AnswerState.Wrong -> MascotMood.SAD
                     AnswerState.Waiting -> MascotMood.IDLE
                 },
-                size = mascotSize
+                size = mascotSize,
+                avatar = settings.avatar
             )
             MascotBubble(
                 phrase = viewModel.mascotPhrase,

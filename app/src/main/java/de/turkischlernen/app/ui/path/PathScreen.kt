@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.model.LearnUnit
 import de.turkischlernen.app.data.model.Lesson
@@ -243,6 +245,8 @@ private fun LessonNode(
         NodeState.LOCKED -> AppColors.Locked
     }
 
+    val settings by LocalAppContainer.current.settingsRepository.current.collectAsState()
+
     val pulse by rememberInfiniteTransition(label = "pulse").animateFloat(
         initialValue = 1f,
         targetValue = if (state == NodeState.CURRENT) 1.06f else 1f,
@@ -315,6 +319,7 @@ private fun LessonNode(
                 Kangal(
                     mood = MascotMood.WAVE,
                     size = 70.dp,
+                    avatar = settings.avatar,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .offset(x = 62.dp)
