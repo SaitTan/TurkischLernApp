@@ -13,6 +13,8 @@ import de.turkischlernen.app.audio.Haptics
 import de.turkischlernen.app.audio.SoundPlayer
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.content.ExerciseGenerator
+import de.turkischlernen.app.data.content.MascotPhrase
+import de.turkischlernen.app.data.content.MascotPhrases
 import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.progress.Achievement
 import de.turkischlernen.app.data.progress.Achievements
@@ -68,6 +70,10 @@ class LessonViewModel(
 
     /** Lobspruch der letzten richtigen Antwort. */
     var praise by mutableStateOf(LessonLogic.PRAISES.first())
+        private set
+
+    /** Aktueller Zuruf des Maskottchens – null, bis eine Antwort gegeben wurde. */
+    var mascotPhrase by mutableStateOf<MascotPhrase?>(null)
         private set
 
     private var correctAnswers by mutableIntStateOf(0)
@@ -133,6 +139,7 @@ class LessonViewModel(
         if (correct) {
             correctAnswers++
             praise = LessonLogic.pickPraise(lastPraise, random).also { lastPraise = it }
+            mascotPhrase = MascotPhrases.pick(MascotPhrases.success, mascotPhrase, random)
             // Ab der Combo-Schwelle ersetzt der steigende Combo-Ton den normalen Ton.
             if (LessonLogic.showsComboBanner(combo)) {
                 sounds.combo(LessonLogic.comboLevel(combo))
@@ -145,6 +152,7 @@ class LessonViewModel(
                 itemIds.forEach { repository.clearMistake(it) }
             }
         } else {
+            mascotPhrase = MascotPhrases.pick(MascotPhrases.comfort, mascotPhrase, random)
             sounds.wrong()
             haptics.error()
             mistakes++
@@ -170,6 +178,7 @@ class LessonViewModel(
             if (answerState is AnswerState.Correct) solvedCount++
         }
         answerState = AnswerState.Waiting
+        mascotPhrase = null
 
         if (queue.isEmpty()) {
             if (repeatQueue.isNotEmpty()) {
@@ -184,6 +193,7 @@ class LessonViewModel(
     private fun complete() {
         if (finished) return
         finished = true
+        mascotPhrase = MascotPhrases.pick(MascotPhrases.cheer, mascotPhrase, random)
         viewModelScope.launch {
             val before = repository.progress.first()
             // Freies Wiederholen gibt nur bis zum Tageskontingent XP.

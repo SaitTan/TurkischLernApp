@@ -45,12 +45,15 @@ class SpeechManager(context: Context) {
     /**
      * Liest [text] auf Türkisch vor.
      * @param slow langsamere, deutlichere Aussprache (z. B. bei langem Antippen)
+     * @param queue true = hinten anstellen, statt Laufendes abzuschneiden
+     *              (der Maskottchen-Ruf kommt so nach dem Vokabel-Wort)
      */
-    fun speak(text: String, slow: Boolean = false) {
+    fun speak(text: String, slow: Boolean = false, queue: Boolean = false) {
         val engine = tts ?: return
         if (!ready || text.isBlank()) return
         engine.setSpeechRate(if (slow) SLOW_RATE else NORMAL_RATE)
-        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, text.hashCode().toString())
+        val mode = if (queue) TextToSpeech.QUEUE_ADD else TextToSpeech.QUEUE_FLUSH
+        engine.speak(text, mode, null, text.hashCode().toString())
     }
 
     fun stop() {
