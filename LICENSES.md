@@ -1,15 +1,18 @@
 # Lizenzen verwendeter Inhalte
 
-## Sounds (`app/src/main/res/raw/sfx_*.wav`)
+## Sounds (`app/src/main/res/raw/sfx_*`)
 
-Eigene Sounds, per additiver Synthese erzeugt (Marimba-/Glocken-Klang) –
-keine fremden Aufnahmen, keine Sounds aus anderen Apps. Gehören zu diesem Projekt.
+Die meisten Sounds sind eigene, per additiver Synthese erzeugte Töne
+(Marimba-/Glocken-Klang), erzeugt mit `tools/gen_sounds.py`.
+
+`sfx_correct.mp3` und `sfx_wrong.mp3` wurden vom Projektinhaber beigesteuert.
+Vor einer Veröffentlichung der App muss deren Herkunft und Lizenz geklärt werden.
 
 | Datei | Klang |
 |---|---|
 | sfx_tap.wav | weiches „Plopp“ beim Antippen |
-| sfx_correct.wav | helles, aufsteigendes „Ding-Ding“ |
-| sfx_wrong.wav | dumpfes, absteigendes „Bonk-bonk“ |
+| sfx_correct.mp3 | Ton bei richtiger Antwort (beigesteuert) |
+| sfx_wrong.mp3 | Ton bei falscher Antwort (beigesteuert) |
 | sfx_combo.wav | Glitzer-Ton (Tonhöhe steigt mit der Combo) |
 | sfx_xp_tick.wav | kurzes Klicken beim Hochzählen |
 | sfx_celebrate.wav | Fanfare: Arpeggio + Schlussakkord |

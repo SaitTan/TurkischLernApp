@@ -61,16 +61,8 @@ C5, E5, G5 = 523.25, 659.25, 783.99
 C6, E6, G6, C7 = 1046.5, 1318.5, 1568.0, 2093.0
 
 SOUNDS = {
-    # Helles, aufsteigendes "Ding-Ding".
-    "sfx_correct": (0.5, [
-        note(C6, 0.35, 0.00, MARIMBA, 9),
-        note(G6, 0.42, 0.09, MARIMBA, 8),
-    ]),
-    # Dumpfes, absteigendes "Bonk-bonk" – freundlich, nicht schrill.
-    "sfx_wrong": (0.42, [
-        note(233.1, 0.20, 0.00, DULL, 14, pitch_drop=0.06),
-        note(174.6, 0.30, 0.12, DULL, 11, pitch_drop=0.08),
-    ]),
+    # Hinweis: sfx_correct und sfx_wrong sind beigesteuerte MP3-Dateien
+    # und werden hier bewusst NICHT erzeugt (sonst würden sie überschrieben).
     # Weiches "Plopp" beim Antippen.
     "sfx_tap": (0.06, [
         note(900, 0.06, 0.0, [(1, 1.0, 1.0), (2, 0.2, 2.0)], 60, pitch_drop=0.35),
