@@ -2,9 +2,11 @@ package de.turkischlernen.app.ui.navigation
 
 import android.content.Intent
 import android.speech.tts.TextToSpeech
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -63,11 +65,15 @@ fun AppRoot(modifier: Modifier = Modifier) {
             }
             composable(Routes.LESSON) { entry ->
                 val lessonId = entry.arguments?.getString("lessonId").orEmpty()
-                LessonScreen(
-                    lessonId = lessonId,
-                    practiceItemIds = practiceItemIds,
-                    onExit = { navController.popBackStack() }
-                )
+                // Ab Android 15 zeichnet die App bis unter Status- und Navigationsleiste –
+                // ohne Abstand verschwinden "✕", Herzen und "PRÜFEN" dahinter.
+                Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    LessonScreen(
+                        lessonId = lessonId,
+                        practiceItemIds = practiceItemIds,
+                        onExit = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }

@@ -26,6 +26,7 @@ class ProgressRepository(context: Context) {
     private object Keys {
         val totalXp = intPreferencesKey("total_xp")
         val xpToday = intPreferencesKey("xp_today")
+        val practiceXpToday = intPreferencesKey("practice_xp_today")
         val dailyGoal = intPreferencesKey("daily_goal")
         val streak = intPreferencesKey("streak")
         val lastActive = stringPreferencesKey("last_active")
@@ -45,6 +46,7 @@ class ProgressRepository(context: Context) {
         val raw = UserProgress(
             totalXp = this[Keys.totalXp] ?: 0,
             xpToday = this[Keys.xpToday] ?: 0,
+            practiceXpToday = this[Keys.practiceXpToday] ?: 0,
             dailyGoal = this[Keys.dailyGoal] ?: 30,
             streakDays = this[Keys.streak] ?: 0,
             lastActiveDate = this[Keys.lastActive] ?: "",
@@ -62,6 +64,7 @@ class ProgressRepository(context: Context) {
             hearts = ProgressLogic.regeneratedHearts(raw, System.currentTimeMillis()),
             // Tages-XP gehören zum heutigen Tag; an einem neuen Tag starten wir bei 0.
             xpToday = if (raw.lastActiveDate == today) raw.xpToday else 0,
+            practiceXpToday = if (raw.lastActiveDate == today) raw.practiceXpToday else 0,
             // Ein ausgelassener Tag beendet die Serie.
             streakDays = when (raw.lastActiveDate) {
                 today, LocalDate.now().minusDays(1).toString() -> raw.streakDays
@@ -93,6 +96,12 @@ class ProgressRepository(context: Context) {
             prefs[Keys.lastActive] = today.toString()
             prefs[Keys.learned] = (prefs[Keys.learned] ?: emptySet()) + practicedItemIds
             prefs[Keys.runs] = (prefs[Keys.runs] ?: 0) + 1
+            if (lessonId == null) {
+                // Tageskontingent für freies Wiederholen mitzählen.
+                val practiceToday =
+                    if (lastActive == today.toString()) prefs[Keys.practiceXpToday] ?: 0 else 0
+                prefs[Keys.practiceXpToday] = practiceToday + earnedXp
+            }
             if (lessonId != null) {
                 prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
                 if (mistakes == 0) {

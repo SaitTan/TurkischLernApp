@@ -13,7 +13,7 @@ speichert alles nur lokal auf dem Gerät.
 ## ✨ Was die App kann
 
 ### 1. Lernpfad (Tab „Lernen“)
-- **9 Einheiten**, **47 Lektionen** und **102 Wörter & Sätze** – Zickzack-Pfad mit runden Knoten
+- **34 Einheiten**, **182 Lektionen** und **397 Wörter & Sätze** – Zickzack-Pfad mit runden Knoten
 - Lektionen schalten sich nacheinander frei (🔒 → ⭐ → ✅), jede Einheit endet mit einer **Prüfung** 👑
 - **5 Aufgabentypen**, automatisch aus den Vokabeln erzeugt:
   | Aufgabe | Ablauf |

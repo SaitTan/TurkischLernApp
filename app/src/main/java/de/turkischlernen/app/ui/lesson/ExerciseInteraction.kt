@@ -17,6 +17,9 @@ class ExerciseInteraction {
 
     /** Bereits gefundene Paare. */
     var matchedCount by mutableIntStateOf(0)
+
+    /** Falsch zusammengetippte Paare – zählt für die Bewertung der Aufgabe. */
+    var pairMistakes by mutableIntStateOf(0)
 }
 
 /** Prüft, ob überhaupt eine Antwort gegeben wurde (Button "Prüfen" aktiv). */
@@ -42,7 +45,8 @@ fun isAnswerCorrect(exercise: Exercise, interaction: ExerciseInteraction): Boole
                 built.zip(exercise.solution).all { (a, b) -> a.equals(b, ignoreCase = true) }
         }
 
-        is Exercise.MatchPairs -> true
+        // Nur fehlerfrei gefundene Paare gelten als richtig gelöst.
+        is Exercise.MatchPairs -> interaction.pairMistakes == 0
     }
 
 /** Text der richtigen Lösung – wird bei einem Fehler eingeblendet. */
