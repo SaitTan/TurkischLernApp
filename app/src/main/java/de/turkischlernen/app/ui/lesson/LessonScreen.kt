@@ -48,12 +48,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.turkischlernen.app.LocalAppContainer
+import de.turkischlernen.app.data.content.MascotPhrase
 import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.progress.LessonLogic
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ChunkyButton
 import de.turkischlernen.app.ui.components.ThickProgressBar
 import de.turkischlernen.app.ui.components.popIn
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.mascot.MascotBubble
+import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -74,6 +78,7 @@ fun LessonScreen(
     val container = LocalAppContainer.current
     val scope = rememberCoroutineScope()
     val progress by container.progressRepository.progress.collectAsState(initial = UserProgress())
+    val settings by container.settingsRepository.current.collectAsState()
 
     val viewModel: LessonViewModel = viewModel(
         factory = LessonViewModel.factory(
@@ -98,6 +103,7 @@ fun LessonScreen(
             newAchievements = viewModel.newAchievements,
             streakIncreased = viewModel.streakIncreased,
             resultsReady = viewModel.resultsReady,
+            mascotPhrase = viewModel.mascotPhrase,
             onContinue = onExit
         )
         return
@@ -137,6 +143,14 @@ fun LessonScreen(
             glow = true
             delay(GLOW_MILLIS)
             glow = false
+        }
+    }
+
+    // Der Ruf wird hinten angestellt, damit er das Vokabel-Wort nicht abschneidet.
+    LaunchedEffect(viewModel.mascotPhrase) {
+        val phrase = viewModel.mascotPhrase
+        if (phrase != null && settings.soundEnabled) {
+            container.speech.speak(phrase.tr, slow = false, queue = true)
         }
     }
 
@@ -220,6 +234,12 @@ fun LessonScreen(
         FeedbackBar(
             answerState = viewModel.answerState,
             praise = viewModel.praise,
+            mascotMood = when (viewModel.answerState) {
+                AnswerState.Correct -> MascotMood.HAPPY
+                is AnswerState.Wrong -> MascotMood.SAD
+                AnswerState.Waiting -> MascotMood.IDLE
+            },
+            mascotPhrase = viewModel.mascotPhrase,
             checkEnabled = isAnswerReady(exercise, interaction),
             onCheck = {
                 val correct = isAnswerCorrect(exercise, interaction)
@@ -330,11 +350,13 @@ private fun HeartCounter(hearts: Int, unlimited: Boolean, mistakes: Int) {
     }
 }
 
-/** Unterer Balken: "Prüfen" bzw. Rückmeldung und "Weiter" – fährt von unten ein. */
+/** Unterer Balken: Maskottchen, Rueckmeldung und "Pruefen"/"Weiter". */
 @Composable
 private fun FeedbackBar(
     answerState: AnswerState,
     praise: String,
+    mascotMood: MascotMood,
+    mascotPhrase: MascotPhrase?,
     checkEnabled: Boolean,
     onCheck: () -> Unit,
     onContinue: () -> Unit,
@@ -351,84 +373,98 @@ private fun FeedbackBar(
     )
 
     Surface(color = background, modifier = modifier.fillMaxWidth()) {
-        AnimatedContent(
-            targetState = answerState,
-            contentKey = { it::class },
-            transitionSpec = {
-                (slideInVertically { it } + fadeIn()) togetherWith fadeOut()
-            },
-            label = "feedback"
-        ) { state ->
-            Column(Modifier.padding(16.dp)) {
-                when (state) {
-                    AnswerState.Waiting -> Unit
+        Column {
+            // Maskottchen mit Sprechblase – immer sichtbar, auch während der Frage.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Kangal(mood = mascotMood, size = 64.dp)
+                Spacer(Modifier.width(8.dp))
+                MascotBubble(phrase = mascotPhrase)
+            }
 
-                    AnswerState.Correct -> Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("🎉", fontSize = 30.sp)
-                        Text(
-                            praise,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = AppColors.GreenDark
-                        )
-                    }
+            AnimatedContent(
+                targetState = answerState,
+                contentKey = { it::class },
+                transitionSpec = {
+                    (slideInVertically { it } + fadeIn()) togetherWith fadeOut()
+                },
+                label = "feedback"
+            ) { state ->
+                Column(Modifier.padding(16.dp)) {
+                    when (state) {
+                        AnswerState.Waiting -> Unit
 
-                    is AnswerState.Wrong -> Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("🙂", fontSize = 30.sp)
-                        Column(Modifier.weight(1f)) {
+                        AnswerState.Correct -> Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("🎉", fontSize = 30.sp)
                             Text(
-                                // "Paare finden" hat keine einzelne Lösung zum Anzeigen.
-                                if (state.correctAnswer.isBlank()) {
-                                    "Fast! Schau dir die Paare noch einmal an."
-                                } else {
-                                    "Fast! Richtig ist:"
-                                },
-                                style = MaterialTheme.typography.titleMedium,
-                                color = AppColors.RedDark
+                                praise,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = AppColors.GreenDark
                             )
-                            if (state.correctAnswer.isNotBlank()) {
+                        }
+
+                        is AnswerState.Wrong -> Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text("🙂", fontSize = 30.sp)
+                            Column(Modifier.weight(1f)) {
                                 Text(
-                                    state.correctAnswer,
-                                    style = MaterialTheme.typography.titleLarge,
+                                    // "Paare finden" hat keine einzelne Lösung zum Anzeigen.
+                                    if (state.correctAnswer.isBlank()) {
+                                        "Fast! Schau dir die Paare noch einmal an."
+                                    } else {
+                                        "Fast! Richtig ist:"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
                                     color = AppColors.RedDark
                                 )
+                                if (state.correctAnswer.isNotBlank()) {
+                                    Text(
+                                        state.correctAnswer,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = AppColors.RedDark
+                                    )
+                                }
                             }
-                        }
-                        if (state.correctAnswer.isNotBlank()) {
-                            Box(
-                                Modifier
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.White)
-                                    .clickable { onReplay() }
-                                    .padding(8.dp)
-                            ) {
-                                Text("🔊", fontSize = 22.sp)
+                            if (state.correctAnswer.isNotBlank()) {
+                                Box(
+                                    Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.White)
+                                        .clickable { onReplay() }
+                                        .padding(8.dp)
+                                ) {
+                                    Text("🔊", fontSize = 22.sp)
+                                }
                             }
                         }
                     }
-                }
 
-                if (state != AnswerState.Waiting) Spacer(Modifier.height(12.dp))
+                    if (state != AnswerState.Waiting) Spacer(Modifier.height(12.dp))
 
-                if (state == AnswerState.Waiting) {
-                    ChunkyButton(
-                        text = "PRÜFEN",
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = checkEnabled,
-                        onClick = onCheck
-                    )
-                } else {
-                    ChunkyButton(
-                        text = "WEITER",
-                        modifier = Modifier.fillMaxWidth(),
-                        color = if (state is AnswerState.Wrong) AppColors.Red else AppColors.Green,
-                        onClick = onContinue
-                    )
+                    if (state == AnswerState.Waiting) {
+                        ChunkyButton(
+                            text = "PRÜFEN",
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = checkEnabled,
+                            onClick = onCheck
+                        )
+                    } else {
+                        ChunkyButton(
+                            text = "WEITER",
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (state is AnswerState.Wrong) AppColors.Red else AppColors.Green,
+                            onClick = onContinue
+                        )
+                    }
                 }
             }
         }

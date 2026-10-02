@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -38,12 +39,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
+import de.turkischlernen.app.data.content.MascotPhrase
 import de.turkischlernen.app.data.progress.Achievement
 import de.turkischlernen.app.data.progress.LessonLogic
 import de.turkischlernen.app.ui.components.AnimatedCounter
 import de.turkischlernen.app.ui.components.ChunkyButton
 import de.turkischlernen.app.ui.components.ConfettiOverlay
 import de.turkischlernen.app.ui.components.popIn
+import de.turkischlernen.app.ui.mascot.Kangal
+import de.turkischlernen.app.ui.mascot.MascotBubble
+import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.delay
 
@@ -75,6 +80,7 @@ fun LessonCompleteScreen(
     newAchievements: List<Achievement>,
     streakIncreased: Boolean,
     resultsReady: Boolean,
+    mascotPhrase: MascotPhrase?,
     onContinue: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -117,6 +123,15 @@ fun LessonCompleteScreen(
         }
     }
 
+    // Jubelruf des Maskottchens – hinten angestellt, damit nichts abgeschnitten wird.
+    val speech = LocalAppContainer.current.speech
+    val soundOn = LocalAppContainer.current.settingsRepository.current.value.soundEnabled
+    LaunchedEffect(mascotPhrase, stage) {
+        if (stage >= STAGE_TITLE && mascotPhrase != null && soundOn) {
+            speech.speak(mascotPhrase.tr, slow = false, queue = true)
+        }
+    }
+
     Box(modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -125,11 +140,24 @@ fun LessonCompleteScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                if (perfect) "🏆" else "🎉",
-                fontSize = 96.sp,
-                modifier = Modifier.popIn(stage >= STAGE_TROPHY)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Kangal(
+                    mood = MascotMood.CHEER,
+                    size = 104.dp,
+                    modifier = Modifier.popIn(stage >= STAGE_TROPHY)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (perfect) "🏆" else "🎉",
+                    fontSize = 96.sp,
+                    modifier = Modifier.popIn(stage >= STAGE_TROPHY)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            MascotBubble(phrase = if (stage >= STAGE_TITLE) mascotPhrase else null)
             Spacer(Modifier.height(12.dp))
             Column(
                 Modifier.popIn(stage >= STAGE_TITLE),
