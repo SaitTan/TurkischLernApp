@@ -307,25 +307,31 @@ object Curriculum {
         phrasesPerLesson: Int = 2
     ): LearnUnit {
         val lessons = mutableListOf<Lesson>()
+        // index nummeriert die IDs durch und darf sich nie ändern (gespeicherter
+        // Fortschritt). Die Titel zählen Wort- und Satz-Lektionen getrennt.
         var index = 0
+        var wordLessonNumber = 0
+        var phraseLessonNumber = 0
 
         words.chunked(wordsPerLesson).forEach { chunk ->
             index++
+            wordLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Lektion $index",
+                title = "Lektion $wordLessonNumber",
                 wordIds = chunk.map { it.id }
             )
         }
         phrases.chunked(phrasesPerLesson).forEach { chunk ->
             index++
+            phraseLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Sätze $index",
+                title = "Sätze $phraseLessonNumber",
                 phraseIds = chunk.map { it.id }
             )
         }
