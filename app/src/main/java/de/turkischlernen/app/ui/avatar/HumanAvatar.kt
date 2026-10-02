@@ -48,7 +48,9 @@ private val GlassFrame = Color(0xFF2F2F33)
 fun HumanAvatar(
     avatar: AvatarConfig,
     modifier: Modifier = Modifier,
-    size: Dp = 150.dp
+    size: Dp = 150.dp,
+    /** true = nur der Kopf, herangezoomt (für kleine Vorschau-Kacheln). */
+    headOnly: Boolean = false
 ) {
     val blink by rememberInfiniteTransition(label = "avatar").animateFloat(
         initialValue = 1f,
@@ -78,40 +80,54 @@ fun HumanAvatar(
             translate(left = offsetX)
             scale(factor, factor, pivot = Offset.Zero)
         }) {
-            drawShirt(shirt)
-            drawHeadAndFace(skin, hair, avatar.hairId, blink, avatar.glasses)
+            if (headOnly) {
+                withTransform({
+                    scale(1.55f, 1.55f, pivot = Offset(100f, 96f))
+                    translate(top = 22f)
+                }) {
+                    drawHeadAndFace(skin, hair, avatar.hairId, blink, avatar.glasses)
+                }
+            } else {
+                drawShirt(shirt)
+                drawHeadAndFace(skin, hair, avatar.hairId, blink, avatar.glasses)
+            }
         }
     }
 }
 
-/** Schultern und T-Shirt mit Kragen und Ärmeln. */
+/** Schmale Schultern mit T-Shirt, kurzen Ärmeln und Kragen. */
 private fun DrawScope.drawShirt(shirt: Color) {
-    val dark = shirt.darker(0.82f)
+    val dark = shirt.darker(0.84f)
 
-    // Ärmel links und rechts
-    drawOval(dark, Offset(26f, 162f), Size(44f, 46f))
-    drawOval(dark, Offset(130f, 162f), Size(44f, 46f))
+    // Kurze Ärmel
+    listOf(38f, 134f).forEach { left ->
+        drawRoundRect(
+            color = dark,
+            topLeft = Offset(left, 172f),
+            size = Size(28f, 36f),
+            cornerRadius = CornerRadius(13f, 13f)
+        )
+        drawRoundRect(
+            color = Outline,
+            topLeft = Offset(left, 172f),
+            size = Size(28f, 36f),
+            cornerRadius = CornerRadius(13f, 13f),
+            style = Stroke(2.5f)
+        )
+    }
 
-    // Hals
-    drawRoundRect(
-        color = Color(0x00000000),
-        topLeft = Offset(88f, 126f),
-        size = Size(24f, 36f),
-        cornerRadius = CornerRadius(10f, 10f)
-    )
-
-    // Oberkörper
+    // Oberkörper – schmaler als die Schultern, läuft nach unten gerade aus
     drawRoundRect(
         color = shirt,
-        topLeft = Offset(44f, 158f),
-        size = Size(112f, 70f),
-        cornerRadius = CornerRadius(34f, 34f)
+        topLeft = Offset(56f, 166f),
+        size = Size(88f, 62f),
+        cornerRadius = CornerRadius(24f, 24f)
     )
     drawRoundRect(
         color = Outline,
-        topLeft = Offset(44f, 158f),
-        size = Size(112f, 70f),
-        cornerRadius = CornerRadius(34f, 34f),
+        topLeft = Offset(56f, 166f),
+        size = Size(88f, 62f),
+        cornerRadius = CornerRadius(24f, 24f),
         style = Stroke(2.5f)
     )
 
@@ -121,8 +137,8 @@ private fun DrawScope.drawShirt(shirt: Color) {
         startAngle = 200f,
         sweepAngle = 140f,
         useCenter = false,
-        topLeft = Offset(80f, 148f),
-        size = Size(40f, 30f),
+        topLeft = Offset(84f, 158f),
+        size = Size(32f, 24f),
         style = Stroke(5f, cap = StrokeCap.Round)
     )
 }
@@ -137,12 +153,12 @@ private fun DrawScope.drawHeadAndFace(
 ) {
     val skinShadow = skin.darker(0.9f)
 
-    // Hals
+    // Hals – schmal, verschwindet im Kragen
     drawRoundRect(
         color = skinShadow,
-        topLeft = Offset(86f, 122f),
-        size = Size(28f, 44f),
-        cornerRadius = CornerRadius(12f, 12f)
+        topLeft = Offset(90f, 124f),
+        size = Size(20f, 44f),
+        cornerRadius = CornerRadius(9f, 9f)
     )
 
     // Ohren

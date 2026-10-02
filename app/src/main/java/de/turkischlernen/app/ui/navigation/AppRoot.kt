@@ -160,5 +160,5 @@ private val TABS = listOf(
     TabItem("🏠", "Lernen"),
     TabItem("🙋", "Ich brauche"),
     TabItem("🔁", "Üben"),
-    TabItem("🦉", "Profil")
+    TabItem("🧑", "Profil")
 )

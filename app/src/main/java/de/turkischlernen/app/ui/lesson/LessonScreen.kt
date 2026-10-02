@@ -147,13 +147,6 @@ fun LessonScreen(
         }
     }
 
-    // Der Ruf wird hinten angestellt, damit er das Vokabel-Wort nicht abschneidet.
-    LaunchedEffect(viewModel.mascotPhrase) {
-        val phrase = viewModel.mascotPhrase
-        if (phrase != null && settings.soundEnabled) {
-            container.speech.speak(phrase.tr, slow = false, queue = true)
-        }
-    }
 
     // Alle Groessen haengen an der Bildschirmhoehe, damit die Antworten
     // auch auf kleinen Geraeten ueber den Knopf passen.

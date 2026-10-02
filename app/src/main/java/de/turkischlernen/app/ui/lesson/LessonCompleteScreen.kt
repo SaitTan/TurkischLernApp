@@ -124,15 +124,7 @@ fun LessonCompleteScreen(
         }
     }
 
-    // Jubelruf des Maskottchens – hinten angestellt, damit nichts abgeschnitten wird.
-    val speech = LocalAppContainer.current.speech
     val settings by LocalAppContainer.current.settingsRepository.current.collectAsState()
-    val soundOn = settings.soundEnabled
-    LaunchedEffect(mascotPhrase, stage) {
-        if (stage >= STAGE_TITLE && mascotPhrase != null && soundOn) {
-            speech.speak(mascotPhrase.tr, slow = false, queue = true)
-        }
-    }
 
     Box(modifier.fillMaxSize()) {
         Column(

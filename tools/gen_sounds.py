@@ -61,7 +61,7 @@ C5, E5, G5 = 523.25, 659.25, 783.99
 C6, E6, G6, C7 = 1046.5, 1318.5, 1568.0, 2093.0
 
 SOUNDS = {
-    # Hinweis: sfx_correct und sfx_wrong sind beigesteuerte MP3-Dateien
+    # Hinweis: sfx_correct, sfx_wrong und sfx_celebrate sind beigesteuerte MP3-Dateien
     # und werden hier bewusst NICHT erzeugt (sonst würden sie überschrieben).
     # Weiches "Plopp" beim Antippen.
     "sfx_tap": (0.06, [
@@ -75,15 +75,6 @@ SOUNDS = {
     # Sehr kurzes Klicken beim Hochzählen.
     "sfx_xp_tick": (0.035, [
         note(2400, 0.035, 0.0, [(1, 1.0, 1.0)], 120),
-    ]),
-    # Fröhliche Fanfare: Arpeggio nach oben + Schlussakkord.
-    "sfx_celebrate": (1.25, [
-        note(C5, 0.30, 0.00, MARIMBA, 6),
-        note(E5, 0.30, 0.10, MARIMBA, 6),
-        note(G5, 0.30, 0.20, MARIMBA, 6),
-        note(C6, 0.90, 0.32, MARIMBA, 3.5),
-        note(E6, 0.90, 0.32, MARIMBA, 3.5, vol=0.6),
-        note(G6, 0.90, 0.32, BELL, 3.5, vol=0.35),
     ]),
     # Abzeichen: schnelles Glitzer-Arpeggio.
     "sfx_badge": (1.0, [

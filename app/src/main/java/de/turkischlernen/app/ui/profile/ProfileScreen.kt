@@ -173,7 +173,11 @@ fun ProfileScreen(
                                 },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(style.emoji, fontSize = 22.sp)
+                            HumanAvatar(
+                                avatar = settings.avatar.copy(hairId = style.id),
+                                size = 42.dp,
+                                headOnly = true
+                            )
                         }
                     }
                 }
