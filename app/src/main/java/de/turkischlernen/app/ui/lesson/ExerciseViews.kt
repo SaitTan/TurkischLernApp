@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
@@ -143,6 +144,7 @@ fun PictureChoiceView(
     interaction: ExerciseInteraction,
     locked: Boolean,
     onSpeak: (String, Boolean) -> Unit,
+    illustrationSize: Dp = 160.dp,
     modifier: Modifier = Modifier
 ) {
     var bounce by remember { mutableStateOf(false) }
@@ -165,14 +167,14 @@ fun PictureChoiceView(
                 }
                 .padding(8.dp)
         ) {
-            ItemIllustration(exercise.target, size = 160.dp)
+            ItemIllustration(exercise.target, size = illustrationSize)
         }
         Text(
             "Tippe auf das Bild, um es zu hören 🔊",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
         OptionList(
             options = exercise.options,
             label = { it.tr },

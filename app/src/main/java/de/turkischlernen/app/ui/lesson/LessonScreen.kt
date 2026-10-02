@@ -15,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -154,7 +155,13 @@ fun LessonScreen(
         }
     }
 
-    Column(modifier.fillMaxSize()) {
+    // Alle Groessen haengen an der Bildschirmhoehe, damit die Antworten
+    // auch auf kleinen Geraeten ueber den Knopf passen.
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val mascotSize = (maxHeight * 0.145f).coerceIn(84.dp, 150.dp)
+        val illustrationSize = (maxHeight * 0.155f).coerceIn(96.dp, 160.dp)
+
+    Column(Modifier.fillMaxSize()) {
 
         // Kopfzeile: Abbrechen, Fortschritt, Herzen
         Row(
@@ -188,7 +195,7 @@ fun LessonScreen(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(170.dp),
+                .height(mascotSize),
             contentAlignment = Alignment.Center
         ) {
             Kangal(
@@ -197,7 +204,7 @@ fun LessonScreen(
                     is AnswerState.Wrong -> MascotMood.SAD
                     AnswerState.Waiting -> MascotMood.IDLE
                 },
-                size = 165.dp
+                size = mascotSize
             )
             MascotBubble(
                 phrase = viewModel.mascotPhrase,
@@ -210,7 +217,7 @@ fun LessonScreen(
         Text(
             text = exercise.prompt,
             style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
         )
 
         Box(
@@ -222,7 +229,13 @@ fun LessonScreen(
         ) {
             when (exercise) {
                 is Exercise.PictureChoice ->
-                    PictureChoiceView(exercise, interaction, locked, speak)
+                    PictureChoiceView(
+                        exercise = exercise,
+                        interaction = interaction,
+                        locked = locked,
+                        onSpeak = speak,
+                        illustrationSize = illustrationSize
+                    )
 
                 is Exercise.TranslateToGerman ->
                     TranslateView(exercise, interaction, locked, speak)
@@ -272,6 +285,7 @@ fun LessonScreen(
             onContinue = { viewModel.next() },
             onReplay = { speak(spokenText(exercise), true) }
         )
+    }
     }
 
     if (showExitDialog) {
