@@ -10,7 +10,7 @@ class CallScriptsTest {
 
     @Test
     fun `es gibt mehrere Telefonate mit Titel und Symbol`() {
-        assertTrue(CallScripts.all.size >= 3)
+        assertTrue(CallScripts.all.size >= 7)
         CallScripts.all.forEach { script ->
             assertTrue(script.title.isNotBlank())
             assertTrue(script.subtitle.isNotBlank())
@@ -48,6 +48,12 @@ class CallScriptsTest {
             val ids = script.lines.map { it.id }
             assertEquals(ids.size, ids.toSet().size)
         }
+    }
+
+    @Test
+    fun `die Telefonat-Ids sind eindeutig`() {
+        val ids = CallScripts.all.map { it.id }
+        assertEquals(ids.size, ids.toSet().size)
     }
 
     @Test

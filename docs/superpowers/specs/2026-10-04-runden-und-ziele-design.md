@@ -13,7 +13,7 @@ und im Eltern-Bereich lassen sich Spielzeit und einzelne Töne regeln.
 ### 1. Drei Runden je Lektion
 
 - Jede Lektion wird **dreimal** gespielt (`ROUNDS_PER_LESSON = 3`), jede Runde mit
-  höchstens 14 Aufgaben wie bisher.
+  rund 28 Aufgaben (Stand 2026-10-04 von 14 auf 28 erhöht).
 - Antippen eines Knotens öffnet eine kleine Karte (wie bei Duolingo): Titel der Lektion,
   „Runde 2 von 3", Knopf **LOS!** bzw. **WIEDERHOLEN**, Abbrechen durch Tippen daneben.
 - Eine Lektion gilt als abgeschlossen, wenn drei Runden geschafft sind. Erst dann wird

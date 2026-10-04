@@ -53,12 +53,16 @@ class ExerciseGeneratorTest {
     }
 
     @Test
-    fun `keine Runde ist laenger als 14 Aufgaben`() {
+    fun `jede Runde ist lang genug, aber nicht endlos`() {
         Curriculum.lessons.forEach { lesson ->
             val exercises = ExerciseGenerator.forLesson(lesson, Random(5))
             assertTrue(
+                "${lesson.id} hat nur ${exercises.size} Aufgaben",
+                exercises.size >= 28
+            )
+            assertTrue(
                 "${lesson.id} hat ${exercises.size} Aufgaben",
-                exercises.size <= 14
+                exercises.size <= 34
             )
         }
     }
