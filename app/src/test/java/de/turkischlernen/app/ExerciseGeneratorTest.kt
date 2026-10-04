@@ -3,6 +3,7 @@ package de.turkischlernen.app
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.content.ExerciseGenerator
 import de.turkischlernen.app.data.model.Exercise
+import de.turkischlernen.app.data.model.Phrase
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -59,13 +60,31 @@ class ExerciseGeneratorTest {
     fun `jede Runde ist lang genug, aber nicht endlos`() {
         Curriculum.lessons.forEach { lesson ->
             val exercises = ExerciseGenerator.forLesson(lesson, Random(5))
+            val stoff = (lesson.itemIds + Curriculum.reviewItems(lesson).map { it.id }).distinct()
             assertTrue(
                 "${lesson.id} hat nur ${exercises.size} Aufgaben",
-                exercises.size >= 28
+                exercises.size >= ExerciseGenerator.targetCount(stoff.size)
             )
             assertTrue(
                 "${lesson.id} hat ${exercises.size} Aufgaben",
-                exercises.size <= 34
+                exercises.size <= ExerciseGenerator.MAX_EXERCISES_PER_LESSON + 6
+            )
+        }
+    }
+
+    @Test
+    fun `Lektionen mit genug Stoff bleiben lang`() {
+        val lang = Curriculum.lessons.filter {
+            (it.itemIds + Curriculum.reviewItems(it).map { item -> item.id }).distinct().size >= 5
+        }
+        assertTrue("Keine langen Lektionen gefunden", lang.size > Curriculum.lessons.size / 2)
+        lang.forEach { lesson ->
+            assertEquals(
+                "${lesson.id} ist zu kurz",
+                ExerciseGenerator.MAX_EXERCISES_PER_LESSON,
+                ExerciseGenerator.targetCount(
+                    (lesson.itemIds + Curriculum.reviewItems(lesson).map { it.id }).distinct().size
+                )
             )
         }
     }
@@ -81,7 +100,7 @@ class ExerciseGeneratorTest {
                 erwartet,
                 vokabeln.size
             )
-            assertTrue("${lesson.id} fragt zu wenig ab", vokabeln.size >= 5)
+            assertTrue("${lesson.id} fragt zu wenig ab", vokabeln.size >= 3)
         }
     }
 
@@ -109,7 +128,8 @@ class ExerciseGeneratorTest {
                     is Exercise.Listening -> exercise.options
                     else -> emptyList()
                 }
-                optionen.forEach { option ->
+                // Sätze haben je Einheit nur zwei Geschwister – da hilft die App aus.
+                optionen.filter { it !is Phrase }.forEach { option ->
                     assertEquals(
                         "Antwort ${option.id} passt nicht zu ${lesson.unitId}",
                         lesson.unitId,

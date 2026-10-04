@@ -16,8 +16,22 @@ object ExerciseGenerator {
 
     private const val OPTION_COUNT = 4
 
-    /** So lang ist eine Runde: genug zum Üben, ohne endlos zu werden. */
-    private const val TARGET_EXERCISES_PER_LESSON = 28
+    /** So lang ist eine Runde höchstens: genug zum Üben, ohne endlos zu werden. */
+    const val MAX_EXERCISES_PER_LESSON = 28
+
+    /** So kurz darf eine Runde werden, wenn die Lektion wenig Stoff hat. */
+    const val MIN_EXERCISES_PER_LESSON = 18
+
+    /** So oft kommt jede Vokabel einer Runde dran. */
+    private const val EXERCISES_PER_ITEM = 6
+
+    /**
+     * Wie lang die Runde wird. Lektionen mit wenig Stoff – etwa die erste
+     * Lektion einer Einheit, die noch nichts zum Wiederholen hat – werden
+     * kürzer, statt dieselben drei Wörter zehnmal abzufragen.
+     */
+    fun targetCount(poolSize: Int): Int =
+        (poolSize * EXERCISES_PER_ITEM).coerceIn(MIN_EXERCISES_PER_LESSON, MAX_EXERCISES_PER_LESSON)
 
     /** Sicherheitsnetz gegen Endlosschleifen beim Auffüllen. */
     private const val MAX_FILL_STEPS = 400
@@ -42,9 +56,10 @@ object ExerciseGenerator {
         //    reihum in wechselnden Aufgabentypen, bis die Runde lang genug ist.
         val wiederholung = Curriculum.reviewItems(lesson)
         val pool = (items + wiederholung).distinctBy { it.id }
+        val ziel = targetCount(pool.size)
 
         var schritt = 0
-        while (exercises.size < TARGET_EXERCISES_PER_LESSON && schritt < MAX_FILL_STEPS) {
+        while (exercises.size < ziel && schritt < MAX_FILL_STEPS) {
             val item = pool[schritt % pool.size]
             val runde = schritt / pool.size
 

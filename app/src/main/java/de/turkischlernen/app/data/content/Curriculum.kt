@@ -342,7 +342,7 @@ object Curriculum {
         colorHex: Long,
         words: List<Word>,
         phrases: List<Phrase> = emptyList(),
-        wordsPerLesson: Int = 5,
+        wordsPerLesson: Int = 3,
         phrasesPerLesson: Int = 2
     ): LearnUnit {
         val lessons = mutableListOf<Lesson>()
