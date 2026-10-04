@@ -3,7 +3,7 @@
 Eine kindgerechte Android-App im Stil von Duolingo, mit der ein 8-jähriges,
 deutschsprachiges Kind **Türkisch** lernen kann: Lernpfad mit Einheiten und
 Lektionen, XP, Tagesziel, Serie (Streak), Herzen, Abzeichen, Konfetti – und
-zusätzlich eine Kommunikationstafel „Ich brauche …“ für den Alltag.
+dazu ein Maskottchen, ein eigener Avatar, Tagesaufgaben und Schatztruhen.
 
 Die App ist **komplett offline**, **ohne Login**, **ohne Werbung** und
 speichert alles nur lokal auf dem Gerät.
@@ -14,6 +14,7 @@ speichert alles nur lokal auf dem Gerät.
 
 ### 1. Lernpfad (Tab „Lernen“)
 - **34 Einheiten**, **182 Lektionen** und **397 Wörter & Sätze** – Zickzack-Pfad mit runden Knoten
+- Jede Lektion hat **3 Runden**; der Ring am Knoten zeigt den Stand, nach einer Extra-Runde wird er **gold**
 - Lektionen schalten sich nacheinander frei (🔒 → ⭐ → ✅), jede Einheit endet mit einer **Prüfung** 👑
 - **5 Aufgabentypen**, automatisch aus den Vokabeln erzeugt:
   | Aufgabe | Ablauf |
@@ -28,10 +29,9 @@ speichert alles nur lokal auf dem Gerät.
   die richtige Lösung wird immer angezeigt **und vorgesprochen**
 - Abschlussbildschirm mit **Konfetti**, XP, Serie und Fehlerzahl
 
-### 2. Ich brauche … (Tab „Ich brauche“)
-16 große Bildkarten für Alltagssituationen (Toilette, Hunger, Durst, Hilfe, …).
-Ein Tipp liest den türkischen Satz vor, **langes Drücken** liest ihn langsam vor.
-Deutsches Label, türkischer Satz und Aussprachehilfe stehen auf jeder Karte.
+### 2. Ziele (Tab „Ziele“)
+Tagesziel mit Fortschrittsbalken, drei täglich wechselnde Aufgaben und die
+Tages-Truhe. Dazu eine Übersicht, wie viele Truhen auf dem Lernpfad warten.
 
 ### 3. Üben (Tab „Üben“)
 - **Schwierige Wörter üben** – alle Wörter, bei denen Fehler passiert sind
@@ -62,7 +62,7 @@ Deutsches Label, türkischer Satz und Aussprachehilfe stehen auf jeder Karte.
 | 🏠 Zuhause | ev, kapı, masa, sandalye, yatak, pencere, mutfak, banyo, lamba, anahtar, kitap, oyuncak |
 | 👨‍👩‍👧‍👦 Familie | anne, baba, kardeş, abla, abi, dede, nine, bebek, arkadaş, aile |
 | 👋 Begrüßen & Danke | merhaba, günaydın, lütfen, evet, hayır + Sätze („iyi geceler“, „teşekkür ederim“ …) |
-| 🙋 Ich brauche … | acıktım⭐, susadım⭐, yoruldum, bittim, anlamıyorum, üşüdüm + Sätze („su istiyorum“ …) |
+| 🙋 Gefühle & Alltag | acıktım⭐, susadım⭐, yoruldum, bittim, anlamıyorum, üşüdüm + Sätze („su istiyorum“ …) |
 
 ⭐ = Wörter, die das Kind schon kennt – sie sind in der Wörterliste markiert.
 
@@ -128,12 +128,12 @@ app/src/main/java/de/turkischlernen/app/
 ├── AppContainer.kt            Repository, Sprachausgabe, Töne
 ├── audio/
 │   ├── SpeechManager.kt       Text-to-Speech tr-TR
-│   └── SoundPlayer.kt         berechnete Feedback-Töne (ohne Audiodateien)
+│   └── SoundPlayer.kt         Feedback-Töne (einzeln abschaltbar)
 ├── data/
 │   ├── model/                 Word, Phrase, Lesson, LearnUnit, Exercise …
 │   ├── content/
 │   │   ├── Curriculum.kt      ← hier stehen ALLE Vokabeln & Einheiten
-│   │   ├── Situations.kt      ← hier stehen die „Ich brauche“-Karten
+│   │   ├── DailyQuests.kt     ← die Tagesaufgaben
 │   │   └── ExerciseGenerator.kt  erzeugt die Aufgaben einer Lektion
 │   └── progress/              Fortschritt (DataStore), Streak/Herzen-Logik, Abzeichen
 └── ui/
@@ -141,7 +141,9 @@ app/src/main/java/de/turkischlernen/app/
     ├── components/            Buttons, Konfetti, Illustrationen, Statusleiste
     ├── path/                  Lernpfad
     ├── lesson/                Lektion, Aufgabenansichten, Abschlussbildschirm
-    ├── situations/            „Ich brauche …“
+    ├── goals/                 Ziele: Tagesaufgaben & Truhen
+    ├── mascot/                Kangal-Maskottchen
+    ├── avatar/                eigene Figur
     ├── practice/              Wiederholen
     ├── profile/               Profil & Eltern-Bereich
     └── navigation/            Tabs & Navigation

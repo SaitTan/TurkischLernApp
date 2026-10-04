@@ -18,11 +18,35 @@ import kotlinx.coroutines.flow.stateIn
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "einstellungen")
 
+/** Welche Art von Ton gerade gespielt werden soll. */
+enum class SoundKind { TAP, ANSWER, VOICE, COMBO, XP, REWARD }
+
+/** Die einzelnen Ton-Schalter aus dem Eltern-Bereich. */
+data class SoundSettings(
+    val tap: Boolean = true,
+    val answer: Boolean = true,
+    val voice: Boolean = true,
+    val combo: Boolean = true,
+    val xp: Boolean = true,
+    val reward: Boolean = true
+) {
+    fun isOn(kind: SoundKind): Boolean = when (kind) {
+        SoundKind.TAP -> tap
+        SoundKind.ANSWER -> answer
+        SoundKind.VOICE -> voice
+        SoundKind.COMBO -> combo
+        SoundKind.XP -> xp
+        SoundKind.REWARD -> reward
+    }
+}
+
 data class AppSettings(
     val soundEnabled: Boolean = true,
     val hapticsEnabled: Boolean = true,
     /** Aussehen und Name des Maskottchens. */
-    val avatar: AvatarConfig = AvatarConfig()
+    val avatar: AvatarConfig = AvatarConfig(),
+    /** Einzelne Ton-Schalter; greifen nur, wenn [soundEnabled] an ist. */
+    val sounds: SoundSettings = SoundSettings()
 )
 
 /**
@@ -45,6 +69,12 @@ class SettingsRepository(context: Context) {
         val avatarHairColor = stringPreferencesKey("avatar_hair_color")
         val avatarShirt = stringPreferencesKey("avatar_shirt")
         val avatarGlasses = booleanPreferencesKey("avatar_glasses")
+        val soundTap = booleanPreferencesKey("sound_tap")
+        val soundAnswer = booleanPreferencesKey("sound_answer")
+        val soundVoice = booleanPreferencesKey("sound_voice")
+        val soundCombo = booleanPreferencesKey("sound_combo")
+        val soundXp = booleanPreferencesKey("sound_xp")
+        val soundReward = booleanPreferencesKey("sound_reward")
     }
 
     /** Synchron lesbar, damit Sounds und Vibration ohne Verzögerung prüfen können. */
@@ -62,6 +92,14 @@ class SettingsRepository(context: Context) {
                     hairColorId = prefs[Keys.avatarHairColor] ?: AvatarOptions.DEFAULT_HAIR_COLOR,
                     shirtId = prefs[Keys.avatarShirt] ?: AvatarOptions.DEFAULT_SHIRT,
                     glasses = prefs[Keys.avatarGlasses] ?: false
+                ),
+                sounds = SoundSettings(
+                    tap = prefs[Keys.soundTap] ?: true,
+                    answer = prefs[Keys.soundAnswer] ?: true,
+                    voice = prefs[Keys.soundVoice] ?: true,
+                    combo = prefs[Keys.soundCombo] ?: true,
+                    xp = prefs[Keys.soundXp] ?: true,
+                    reward = prefs[Keys.soundReward] ?: true
                 )
             )
         }
@@ -74,6 +112,19 @@ class SettingsRepository(context: Context) {
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
         store.edit { prefs -> prefs[Keys.haptics] = enabled }
+    }
+
+    /** Einzelnen Ton-Schalter umlegen. */
+    suspend fun setSound(kind: SoundKind, enabled: Boolean) {
+        val key = when (kind) {
+            SoundKind.TAP -> Keys.soundTap
+            SoundKind.ANSWER -> Keys.soundAnswer
+            SoundKind.VOICE -> Keys.soundVoice
+            SoundKind.COMBO -> Keys.soundCombo
+            SoundKind.XP -> Keys.soundXp
+            SoundKind.REWARD -> Keys.soundReward
+        }
+        store.edit { prefs -> prefs[key] = enabled }
     }
 
     suspend fun setAvatarFur(id: String) {

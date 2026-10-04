@@ -45,6 +45,7 @@ import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.progress.Achievements
 import de.turkischlernen.app.data.progress.LevelLogic
 import de.turkischlernen.app.data.settings.AvatarOptions
+import de.turkischlernen.app.data.settings.SoundKind
 import de.turkischlernen.app.data.settings.ColorOption
 import de.turkischlernen.app.ui.avatar.HumanAvatar
 import de.turkischlernen.app.data.progress.UserProgress
@@ -68,6 +69,9 @@ fun ProfileScreen(
     val settings by container.settingsRepository.current.collectAsState()
     // Eigener Zustand, damit der Cursor beim Tippen nicht springt.
     var nameInput by remember { mutableStateOf(settings.avatar.name) }
+    var minutenInput by remember(progress.playMinutes) {
+        mutableStateOf(progress.playMinutes.toString())
+    }
 
     val achievements = Achievements.forProgress(progress)
     val doneLessons = progress.completedLessons.size
@@ -397,6 +401,38 @@ fun ProfileScreen(
                         }
                     )
 
+                    if (settings.soundEnabled) {
+                        Column(
+                            Modifier.padding(start = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            SoundSwitch(
+                                "Tipp-Ton", "Beim Antippen von Karten.",
+                                settings.sounds.tap, SoundKind.TAP, scope, container
+                            )
+                            SoundSwitch(
+                                "Antwort-Töne", "Der Ton direkt nach dem Prüfen.",
+                                settings.sounds.answer, SoundKind.ANSWER, scope, container
+                            )
+                            SoundSwitch(
+                                "Kangal-Stimme", "Die Stimme des Hundes nach dem Ton.",
+                                settings.sounds.voice, SoundKind.VOICE, scope, container
+                            )
+                            SoundSwitch(
+                                "Combo-Ton", "Ab drei richtigen Antworten in Folge.",
+                                settings.sounds.combo, SoundKind.COMBO, scope, container
+                            )
+                            SoundSwitch(
+                                "XP-Ticks", "Das Klicken beim Hochzählen am Ende.",
+                                settings.sounds.xp, SoundKind.XP, scope, container
+                            )
+                            SoundSwitch(
+                                "Belohnungs-Töne", "Fanfare, Abzeichen, Serie und Truhen.",
+                                settings.sounds.reward, SoundKind.REWARD, scope, container
+                            )
+                        }
+                    }
+
                     SettingSwitch(
                         title = "Vibration",
                         subtitle = "Kurze Vibration bei richtigen und falschen Antworten.",
@@ -443,15 +479,15 @@ fun ProfileScreen(
                     Text("Spielzeit", style = MaterialTheme.typography.titleMedium)
                     Text(
                         "Verdient: ${progress.playMinutes} Minuten PlayStation " +
-                            "(1 Minute je abgeschlossener Lektion).",
+                            "(1 Minute je gespielter Runde).",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(5, 15, 30).forEach { minuten ->
+                        listOf(30, 15, 5, 1).forEach { minuten ->
                             GoalChip(
                                 selected = false,
-                                label = "-$minuten min",
+                                label = "−$minuten",
                                 onClick = {
                                     scope.launch {
                                         container.progressRepository.usePlayMinutes(minuten)
@@ -459,6 +495,41 @@ fun ProfileScreen(
                                 }
                             )
                         }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(1, 5, 15).forEach { minuten ->
+                            GoalChip(
+                                selected = false,
+                                label = "+$minuten",
+                                onClick = {
+                                    scope.launch {
+                                        container.progressRepository.addPlayMinutes(minuten)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = minutenInput,
+                            onValueChange = { eingabe ->
+                                minutenInput = eingabe.filter { it.isDigit() }.take(3)
+                            },
+                            singleLine = true,
+                            label = { Text("Minuten setzen") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GoalChip(
+                            selected = true,
+                            label = "Speichern",
+                            onClick = {
+                                val wert = minutenInput.toIntOrNull() ?: 0
+                                scope.launch { container.progressRepository.setPlayMinutes(wert) }
+                            }
+                        )
                     }
 
                     SettingButton("🗑️ Fortschritt zurücksetzen", AppColors.Red) {
@@ -612,4 +683,24 @@ private fun ColorPickerRow(
             }
         }
     }
+}
+
+/** Ein einzelner Ton-Schalter im Eltern-Bereich. */
+@Composable
+private fun SoundSwitch(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    kind: SoundKind,
+    scope: kotlinx.coroutines.CoroutineScope,
+    container: de.turkischlernen.app.AppContainer
+) {
+    SettingSwitch(
+        title = title,
+        subtitle = subtitle,
+        checked = checked,
+        onCheckedChange = { an ->
+            scope.launch { container.settingsRepository.setSound(kind, an) }
+        }
+    )
 }

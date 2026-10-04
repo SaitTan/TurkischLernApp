@@ -38,7 +38,7 @@ import de.turkischlernen.app.ui.lesson.LessonViewModel
 import de.turkischlernen.app.ui.path.PathScreen
 import de.turkischlernen.app.ui.practice.PracticeScreen
 import de.turkischlernen.app.ui.profile.ProfileScreen
-import de.turkischlernen.app.ui.situations.SituationsScreen
+import de.turkischlernen.app.ui.goals.GoalsScreen
 import de.turkischlernen.app.ui.stats.StreakOverlay
 import kotlinx.coroutines.launch
 
@@ -143,7 +143,7 @@ private fun HomeScreen(
                     }
                 )
 
-                1 -> SituationsScreen(onSpeak = speak)
+                1 -> GoalsScreen(progress = progress)
 
                 2 -> PracticeScreen(
                     progress = progress,
@@ -165,7 +165,7 @@ private data class TabItem(val emoji: String, val label: String)
 
 private val TABS = listOf(
     TabItem("🏠", "Lernen"),
-    TabItem("🙋", "Ich brauche"),
+    TabItem("🎯", "Ziele"),
     TabItem("🔁", "Üben"),
     TabItem("🧑", "Profil")
 )

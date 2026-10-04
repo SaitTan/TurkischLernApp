@@ -16,7 +16,10 @@ class AppContainer(context: Context) {
     val progressRepository: ProgressRepository = ProgressRepository(context)
     val settingsRepository: SettingsRepository = SettingsRepository(context)
     val speech: SpeechManager = SpeechManager(context)
-    val sounds: SoundPlayer = SoundPlayer(context) { settingsRepository.current.value.soundEnabled }
+    val sounds: SoundPlayer = SoundPlayer(context) { kind ->
+        val einstellungen = settingsRepository.current.value
+        einstellungen.soundEnabled && einstellungen.sounds.isOn(kind)
+    }
     val haptics: Haptics = Haptics(context) { settingsRepository.current.value.hapticsEnabled }
 
     fun release() {

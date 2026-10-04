@@ -43,6 +43,7 @@ class ProgressRepository(context: Context) {
         val heartsUpdated = longPreferencesKey("hearts_updated")
         val unlimitedHearts = booleanPreferencesKey("unlimited_hearts")
         val completed = stringSetPreferencesKey("completed_lessons")
+        val lessonRounds = stringSetPreferencesKey("lesson_rounds")
         val perfect = stringSetPreferencesKey("perfect_lessons")
         val learned = stringSetPreferencesKey("learned_items")
         val mistakes = stringSetPreferencesKey("mistake_items")
@@ -72,6 +73,11 @@ class ProgressRepository(context: Context) {
             heartsUpdatedAt = this[Keys.heartsUpdated] ?: 0L,
             unlimitedHearts = this[Keys.unlimitedHearts] ?: true,
             completedLessons = this[Keys.completed] ?: emptySet(),
+            // Alte Installationen kennen nur abgeschlossene Lektionen – die zählen als voll.
+            lessonRounds = LessonRounds.withMigratedLessons(
+                rounds = LessonRounds.decode(this[Keys.lessonRounds] ?: emptySet()),
+                completedLessons = this[Keys.completed] ?: emptySet()
+            ),
             perfectLessons = this[Keys.perfect] ?: emptySet(),
             learnedItems = this[Keys.learned] ?: emptySet(),
             mistakeItems = this[Keys.mistakes] ?: emptySet(),
@@ -151,10 +157,22 @@ class ProgressRepository(context: Context) {
                 prefs[Keys.practiceXpToday] = practiceToday + earnedXp
             }
             if (lessonId != null) {
-                // Jede abgeschlossene Lektion bringt Spielzeit.
+                // Jede gespielte Runde bringt Spielzeit.
                 prefs[Keys.playMinutes] =
-                    (prefs[Keys.playMinutes] ?: 0) + UserProgress.PLAY_MINUTES_PER_LESSON
-                prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
+                    (prefs[Keys.playMinutes] ?: 0) + LessonRounds.PLAY_MINUTES_PER_ROUND
+
+                // Runde mitzählen; ab drei Runden gilt die Lektion als abgeschlossen.
+                val runden = LessonRounds.withMigratedLessons(
+                    rounds = LessonRounds.decode(prefs[Keys.lessonRounds] ?: emptySet()),
+                    completedLessons = prefs[Keys.completed] ?: emptySet()
+                ).toMutableMap()
+                val neu = (runden[lessonId] ?: 0) + 1
+                runden[lessonId] = neu
+                prefs[Keys.lessonRounds] = LessonRounds.encode(runden)
+
+                if (LessonRounds.isDone(neu)) {
+                    prefs[Keys.completed] = (prefs[Keys.completed] ?: emptySet()) + lessonId
+                }
                 if (mistakes == 0) {
                     prefs[Keys.perfect] = (prefs[Keys.perfect] ?: emptySet()) + lessonId
                 }
@@ -201,6 +219,11 @@ class ProgressRepository(context: Context) {
 
     suspend fun setDailyGoal(goal: Int) {
         store.edit { prefs -> prefs[Keys.dailyGoal] = goal }
+    }
+
+    /** Eltern-Bereich: Spielzeit direkt setzen. */
+    suspend fun setPlayMinutes(minutes: Int) {
+        store.edit { prefs -> prefs[Keys.playMinutes] = minutes.coerceIn(0, 999) }
     }
 
     /** Zusätzliche Spielzeit, z. B. beim Level-Aufstieg. */

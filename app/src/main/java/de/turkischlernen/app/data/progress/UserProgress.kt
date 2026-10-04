@@ -28,6 +28,8 @@ data class UserProgress(
     val heartsUpdatedAt: Long = 0L,
     val unlimitedHearts: Boolean = true,
     val completedLessons: Set<String> = emptySet(),
+    /** Gespielte Runden je Lektion – bestimmt Farbe, Freischaltung und Spielzeit. */
+    val lessonRounds: Map<String, Int> = emptyMap(),
     val perfectLessons: Set<String> = emptySet(),
     val learnedItems: Set<String> = emptySet(),
     val mistakeItems: Set<String> = emptySet(),
@@ -37,13 +39,13 @@ data class UserProgress(
 
     fun isLessonDone(lessonId: String): Boolean = lessonId in completedLessons
 
+    /** Wie oft diese Lektion schon gespielt wurde. */
+    fun roundsOf(lessonId: String): Int = lessonRounds[lessonId] ?: 0
+
     fun hasHeartsLeft(): Boolean = unlimitedHearts || hearts > 0
 
     companion object {
         const val MAX_HEARTS = 5
-
-        /** So viele Minuten Spielzeit gibt eine abgeschlossene Lektion. */
-        const val PLAY_MINUTES_PER_LESSON = 1
 
         /** Mehr XP als das pro Tag gibt freies Wiederholen nicht. */
         const val PRACTICE_XP_DAILY_CAP = 20

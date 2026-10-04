@@ -1,7 +1,6 @@
 package de.turkischlernen.app
 
 import de.turkischlernen.app.data.content.Curriculum
-import de.turkischlernen.app.data.content.Situations
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -59,17 +58,6 @@ class CurriculumTest {
         listOf("su", "bahce", "yemek", "aciktim", "susadim").forEach { id ->
             assertTrue("$id sollte als bekannt markiert sein", Curriculum.word(id)?.known == true)
         }
-    }
-
-    @Test
-    fun `alle geforderten Situationskarten sind vorhanden`() {
-        val expected = listOf(
-            "Tuvalete gitmem lazım", "Acıktım", "Susadım", "Su istiyorum", "Yoruldum",
-            "Oynamak istiyorum", "Bittim", "Lütfen yardım et", "Anlamıyorum",
-            "Teşekkür ederim"
-        )
-        val actual = Situations.all.map { it.tr }
-        expected.forEach { assertTrue("$it fehlt", it in actual) }
     }
 
     @Test

@@ -52,6 +52,7 @@ import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.MascotPhrase
 import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.progress.LessonLogic
+import de.turkischlernen.app.data.progress.LessonRounds
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ChunkyButton
 import de.turkischlernen.app.ui.components.ThickProgressBar
@@ -105,7 +106,7 @@ fun LessonScreen(
             streakIncreased = viewModel.streakIncreased,
             resultsReady = viewModel.resultsReady,
             mascotPhrase = viewModel.mascotPhrase,
-            playMinutes = if (viewModel.isPractice) 0 else UserProgress.PLAY_MINUTES_PER_LESSON,
+            playMinutes = if (viewModel.isPractice) 0 else LessonRounds.PLAY_MINUTES_PER_ROUND,
             newLevel = viewModel.newLevel,
             onContinue = onExit
         )
