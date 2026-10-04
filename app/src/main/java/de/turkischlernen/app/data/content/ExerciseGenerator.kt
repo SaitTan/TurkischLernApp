@@ -103,9 +103,12 @@ object ExerciseGenerator {
     }
 
     private fun wordBank(phrase: Phrase, random: Random): Exercise.WordBank {
-        val distractors = Curriculum.words
-            .filter { it.tr !in phrase.tokens }
-            .shuffled(random)
+        val unitId = Curriculum.unitIdOfItem(phrase.id)
+        val passend = Curriculum.words.filter { it.tr !in phrase.tokens }
+        // Auch die Störer kommen aus derselben Einheit, solange es dort genug gibt.
+        val eigene = passend.filter { Curriculum.unitIdOfItem(it.id) == unitId }
+        val distractors = (eigene.shuffled(random) + passend.shuffled(random))
+            .distinctBy { it.id }
             .take(if (phrase.tokens.size >= 4) 1 else 2)
             .map { it.tr }
         return Exercise.WordBank(phrase, (phrase.tokens + distractors).shuffled(random))

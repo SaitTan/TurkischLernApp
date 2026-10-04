@@ -81,4 +81,27 @@ class CurriculumTest {
             assertTrue("Satz ist zu kurz: ${it.id}", it.tokens.size >= 2)
         }
     }
+
+    @Test
+    fun `die Wiederholung bleibt in der eigenen Einheit`() {
+        Curriculum.lessons.forEach { lesson ->
+            Curriculum.reviewItems(lesson).forEach { item ->
+                assertEquals(
+                    "${item.id} gehört nicht zu ${lesson.unitId}",
+                    lesson.unitId,
+                    Curriculum.unitIdOfItem(item.id)
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `jede Einheit hat genug Woerter fuer eigene Antwortmoeglichkeiten`() {
+        Curriculum.units.forEach { unit ->
+            assertTrue(
+                "${unit.id} hat nur ${unit.wordIds.size} Wörter",
+                unit.wordIds.size >= 4
+            )
+        }
+    }
 }

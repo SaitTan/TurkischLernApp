@@ -71,16 +71,52 @@ class ExerciseGeneratorTest {
     }
 
     @Test
-    fun `eine Runde fragt viele verschiedene Vokabeln ab`() {
-        Curriculum.lessons.forEachIndexed { index, lesson ->
+    fun `eine Runde fragt alle Vokabeln der Lektion und ihre Wiederholung ab`() {
+        Curriculum.lessons.forEach { lesson ->
             val exercises = ExerciseGenerator.forLesson(lesson, Random(13))
             val vokabeln = exercises.flatMap { it.itemIds }.distinct()
-            // Die allererste Lektion kennt noch keine Wiederholung.
-            val erwartet = if (index == 0) 3 else 6
-            assertTrue(
-                "${lesson.id} fragt nur ${vokabeln.size} Vokabeln ab",
-                vokabeln.size >= erwartet
+            val erwartet = lesson.itemIds.size + Curriculum.reviewItems(lesson).size
+            assertEquals(
+                "${lesson.id} fragt ${vokabeln.size} statt $erwartet Vokabeln ab",
+                erwartet,
+                vokabeln.size
             )
+            assertTrue("${lesson.id} fragt zu wenig ab", vokabeln.size >= 5)
+        }
+    }
+
+    @Test
+    fun `eine Lektion fragt nur Vokabeln ihrer eigenen Einheit ab`() {
+        Curriculum.lessons.forEach { lesson ->
+            ExerciseGenerator.forLesson(lesson, Random(21)).forEach { exercise ->
+                exercise.itemIds.forEach { id ->
+                    assertEquals(
+                        "$id gehört nicht zu ${lesson.unitId} (${lesson.id})",
+                        lesson.unitId,
+                        Curriculum.unitIdOfItem(id)
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `die falschen Antworten kommen aus derselben Einheit`() {
+        Curriculum.lessons.forEach { lesson ->
+            ExerciseGenerator.forLesson(lesson, Random(33)).forEach { exercise ->
+                val optionen = when (exercise) {
+                    is Exercise.PictureChoice -> exercise.options
+                    is Exercise.Listening -> exercise.options
+                    else -> emptyList()
+                }
+                optionen.forEach { option ->
+                    assertEquals(
+                        "Antwort ${option.id} passt nicht zu ${lesson.unitId}",
+                        lesson.unitId,
+                        Curriculum.unitIdOfItem(option.id)
+                    )
+                }
+            }
         }
     }
 

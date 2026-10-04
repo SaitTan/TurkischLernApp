@@ -301,16 +301,11 @@ object Curriculum {
             .filter { vokabel -> vokabel.id !in lesson.itemIds }
             .distinctBy { it.id }
 
-        // Zuerst die eigene Einheit – in einer Zahlen-Lektion sollen keine Farben kommen.
-        val eigeneEinheit = vokabeln(davor.filter { it.unitId == lesson.unitId })
-        if (eigeneEinheit.size >= MIN_OWN_REVIEW) return eigeneEinheit.takeLast(limit)
-
-        val fremdeEinheiten = vokabeln(davor.filter { it.unitId != lesson.unitId })
-        return (eigeneEinheit + fremdeEinheiten.takeLast(limit - eigeneEinheit.size)).take(limit)
+        // Nur die eigene Einheit: in einer Zahlen-Lektion haben Farben nichts zu suchen.
+        // Die erste Lektion einer Einheit hat dadurch gar keine Wiederholung – sie
+        // übt ihre eigenen Wörter in allen Aufgabenarten.
+        return vokabeln(davor.filter { it.unitId == lesson.unitId }).takeLast(limit)
     }
-
-    /** Ab so vielen eigenen Vokabeln bleibt die Wiederholung in der Einheit. */
-    private const val MIN_OWN_REVIEW = 4
 
     /** Gesamtzahl aller lernbaren Einträge (für die Fortschrittsanzeige). */
     val totalItemCount: Int get() = words.size + phrases.size
@@ -347,7 +342,7 @@ object Curriculum {
         colorHex: Long,
         words: List<Word>,
         phrases: List<Phrase> = emptyList(),
-        wordsPerLesson: Int = 3,
+        wordsPerLesson: Int = 5,
         phrasesPerLesson: Int = 2
     ): LearnUnit {
         val lessons = mutableListOf<Lesson>()
