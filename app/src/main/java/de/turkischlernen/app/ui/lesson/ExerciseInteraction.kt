@@ -20,6 +20,17 @@ class ExerciseInteraction {
 
     /** Falsch zusammengetippte Paare – zählt für die Bewertung der Aufgabe. */
     var pairMistakes by mutableIntStateOf(0)
+
+    /** Was die Spracherkennung verstanden hat. */
+    var heardText by mutableStateOf<String?>(null)
+
+    /** Wie oft schon gesprochen wurde (nach zwei Versuchen geht es weiter). */
+    var speakAttempts by mutableIntStateOf(0)
+
+    var speakCorrect by mutableStateOf(false)
+
+    /** true, sobald die Sprech-Aufgabe beendet ist. */
+    var speakDone by mutableStateOf(false)
 }
 
 /** Prüft, ob überhaupt eine Antwort gegeben wurde (Button "Prüfen" aktiv). */
@@ -31,6 +42,7 @@ fun isAnswerReady(exercise: Exercise, interaction: ExerciseInteraction): Boolean
 
         is Exercise.WordBank -> interaction.chosenTiles.isNotEmpty()
         is Exercise.MatchPairs -> interaction.matchedCount >= exercise.items.size
+        is Exercise.Speak -> interaction.speakDone
     }
 
 /** Wertet die Antwort aus. */
@@ -47,6 +59,7 @@ fun isAnswerCorrect(exercise: Exercise, interaction: ExerciseInteraction): Boole
 
         // Nur fehlerfrei gefundene Paare gelten als richtig gelöst.
         is Exercise.MatchPairs -> interaction.pairMistakes == 0
+        is Exercise.Speak -> interaction.speakCorrect
     }
 
 /** Text der richtigen Lösung – wird bei einem Fehler eingeblendet. */
@@ -56,6 +69,7 @@ fun correctAnswerText(exercise: Exercise): String = when (exercise) {
     is Exercise.Listening -> exercise.target.tr
     is Exercise.WordBank -> exercise.target.tr
     is Exercise.MatchPairs -> ""
+    is Exercise.Speak -> exercise.target.tr
 }
 
 /** Text, der nach der Antwort vorgelesen wird (immer Türkisch). */
@@ -65,4 +79,5 @@ fun spokenText(exercise: Exercise): String = when (exercise) {
     is Exercise.Listening -> exercise.target.tr
     is Exercise.WordBank -> exercise.target.tr
     is Exercise.MatchPairs -> ""
+    is Exercise.Speak -> exercise.target.tr
 }

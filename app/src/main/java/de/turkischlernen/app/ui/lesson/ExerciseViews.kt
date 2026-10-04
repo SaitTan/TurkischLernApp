@@ -1,6 +1,15 @@
 package de.turkischlernen.app.ui.lesson
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,12 +36,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -41,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.model.Exercise
 import de.turkischlernen.app.data.model.LearnItem
+import de.turkischlernen.app.data.content.SpeechMatch
+import de.turkischlernen.app.ui.components.ChunkyButton
 import de.turkischlernen.app.ui.components.ItemIllustration
 import de.turkischlernen.app.ui.components.bounce
 import de.turkischlernen.app.ui.components.pressScale
@@ -475,5 +489,145 @@ fun MatchPairsView(
                 .fillMaxWidth()
                 .padding(top = 12.dp)
         )
+    }
+}
+
+/** Nach so vielen Versuchen geht es weiter, damit niemand haengen bleibt. */
+private const val MAX_SPEAK_ATTEMPTS = 2
+
+/**
+ * Sprech-Aufgabe: Das Wort laut sagen, die App hoert zu. Ist keine Erkennung
+ * moeglich, wird daraus eine Nachsprech-Uebung mit dem Knopf "GESAGT!".
+ */
+@Composable
+fun SpeakView(
+    exercise: Exercise.Speak,
+    interaction: ExerciseInteraction,
+    locked: Boolean,
+    onSpeak: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val container = LocalAppContainer.current
+    val settings by container.settingsRepository.current.collectAsState()
+    val context = LocalContext.current
+    val listener = container.speechListener
+
+    var zuhoeren by remember(exercise) { mutableStateOf(false) }
+    var nachsprechen by remember(exercise) {
+        mutableStateOf(!listener.available || !settings.speechRecognition)
+    }
+
+    val pulse by rememberInfiniteTransition(label = "mic").animateFloat(
+        initialValue = 1f,
+        targetValue = if (zuhoeren) 1.15f else 1f,
+        animationSpec = infiniteRepeatable(tween(520), RepeatMode.Reverse),
+        label = "micPuls"
+    )
+
+    fun auswerten(gehoert: String?) {
+        zuhoeren = false
+        if (gehoert.isNullOrBlank()) {
+            // Nichts verstanden oder Erkennung nicht verfuegbar: Nachsprechen.
+            nachsprechen = true
+            return
+        }
+        interaction.heardText = gehoert
+        interaction.speakAttempts++
+        val richtig = SpeechMatch.matches(gehoert, exercise.target.tr)
+        interaction.speakCorrect = richtig
+        interaction.speakDone = richtig || interaction.speakAttempts >= MAX_SPEAK_ATTEMPTS
+    }
+
+    val erlaubnisStarter = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { erlaubt ->
+        if (erlaubt) {
+            zuhoeren = true
+            listener.start { auswerten(it) }
+        } else {
+            nachsprechen = true
+        }
+    }
+
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            exercise.target.tr,
+            style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            exercise.target.hint,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(10.dp))
+        SpeakerButton { onSpeak(exercise.target.tr, false) }
+        Spacer(Modifier.height(18.dp))
+
+        if (nachsprechen) {
+            Text(
+                "Sprich es laut nach und tippe dann auf GESAGT!",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(10.dp))
+            ChunkyButton(
+                text = "GESAGT!",
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !locked && !interaction.speakDone
+            ) {
+                interaction.speakCorrect = true
+                interaction.speakDone = true
+            }
+        } else {
+            Box(
+                Modifier
+                    .size(118.dp)
+                    .scale(pulse)
+                    .clip(CircleShape)
+                    .background(if (zuhoeren) AppColors.Red else AppColors.Blue)
+                    .clickable(enabled = !locked && !zuhoeren) {
+                        val erlaubt = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        if (erlaubt) {
+                            zuhoeren = true
+                            listener.start { auswerten(it) }
+                        } else {
+                            erlaubnisStarter.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🎤", fontSize = 52.sp)
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = if (zuhoeren) "Ich höre zu …" else "Tippe das Mikrofon an und sprich",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        interaction.heardText?.let { gehoert ->
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Gehört: „$gehoert“",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (interaction.speakCorrect) AppColors.GreenDark else AppColors.RedDark,
+                textAlign = TextAlign.Center
+            )
+            if (!interaction.speakCorrect && !interaction.speakDone) {
+                Text(
+                    "Noch einmal versuchen!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }

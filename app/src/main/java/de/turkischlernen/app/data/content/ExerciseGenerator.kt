@@ -47,19 +47,29 @@ object ExerciseGenerator {
             exercises += wordBank(phrase, random)
         }
 
-        // 4. In der Prüfung zusätzlich Paare finden.
+        // 4. Sprechen: ein Wort und ein Satz werden laut gesagt.
+        words.firstOrNull()?.let { exercises += Exercise.Speak(it) }
+        phrases.firstOrNull()?.let { exercises += Exercise.Speak(it) }
+
+        // 5. In der Prüfung zusätzlich Paare finden.
         val pairPool = (words + phrases).shuffled(random)
         if (lesson.kind == LessonKind.TEST && pairPool.size >= 4) {
             exercises += Exercise.MatchPairs(pairPool.take(4))
         }
 
         // Die erste Aufgabe bleibt eine Bildaufgabe, der Rest wird gemischt und gekürzt.
-        return if (exercises.size > 1) {
-            (listOf(exercises.first()) + exercises.drop(1).shuffled(random))
-                .take(MAX_EXERCISES_PER_LESSON)
-        } else {
-            exercises
+        if (exercises.size <= 1) return exercises
+
+        val runde = (listOf(exercises.first()) + exercises.drop(1).shuffled(random))
+            .take(MAX_EXERCISES_PER_LESSON)
+            .toMutableList()
+
+        // Mindestens eine Sprech-Aufgabe soll die Kürzung überleben.
+        val sprechen = exercises.filterIsInstance<Exercise.Speak>()
+        if (sprechen.isNotEmpty() && runde.none { it is Exercise.Speak }) {
+            runde[runde.lastIndex] = sprechen.first()
         }
+        return runde
     }
 
     /**

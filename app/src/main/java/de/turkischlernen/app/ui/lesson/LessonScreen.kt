@@ -249,6 +249,9 @@ fun LessonScreen(
                         wrong = viewModel.answerState is AnswerState.Wrong
                     )
 
+                is Exercise.Speak ->
+                    SpeakView(exercise, interaction, locked, speak)
+
                 is Exercise.MatchPairs ->
                     Column {
                         MatchPairsView(

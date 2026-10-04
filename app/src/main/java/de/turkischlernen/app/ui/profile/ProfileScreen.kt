@@ -443,7 +443,16 @@ fun ProfileScreen(
                     )
 
                     Column {
-                        Text("Tagesziel", style = MaterialTheme.typography.titleMedium)
+                        SettingSwitch(
+                        title = "Spracherkennung",
+                        subtitle = "Aus: Sprech-Aufgaben laufen als Nachsprechen ohne Mikrofon.",
+                        checked = settings.speechRecognition,
+                        onCheckedChange = { an ->
+                            scope.launch { container.settingsRepository.setSpeechRecognition(an) }
+                        }
+                    )
+
+                    Text("Tagesziel", style = MaterialTheme.typography.titleMedium)
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf(15, 30, 50).forEach { goal ->

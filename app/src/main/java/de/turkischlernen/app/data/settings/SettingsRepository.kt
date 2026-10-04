@@ -46,7 +46,9 @@ data class AppSettings(
     /** Aussehen und Name des Maskottchens. */
     val avatar: AvatarConfig = AvatarConfig(),
     /** Einzelne Ton-Schalter; greifen nur, wenn [soundEnabled] an ist. */
-    val sounds: SoundSettings = SoundSettings()
+    val sounds: SoundSettings = SoundSettings(),
+    /** Aus: Sprech-Aufgaben laufen als reines Nachsprechen ohne Mikrofon. */
+    val speechRecognition: Boolean = true
 )
 
 /**
@@ -75,6 +77,7 @@ class SettingsRepository(context: Context) {
         val soundCombo = booleanPreferencesKey("sound_combo")
         val soundXp = booleanPreferencesKey("sound_xp")
         val soundReward = booleanPreferencesKey("sound_reward")
+        val speechRecognition = booleanPreferencesKey("speech_recognition")
     }
 
     /** Synchron lesbar, damit Sounds und Vibration ohne Verzögerung prüfen können. */
@@ -100,7 +103,8 @@ class SettingsRepository(context: Context) {
                     combo = prefs[Keys.soundCombo] ?: true,
                     xp = prefs[Keys.soundXp] ?: true,
                     reward = prefs[Keys.soundReward] ?: true
-                )
+                ),
+                speechRecognition = prefs[Keys.speechRecognition] ?: true
             )
         }
         .catch { emit(AppSettings()) }
@@ -112,6 +116,10 @@ class SettingsRepository(context: Context) {
 
     suspend fun setHapticsEnabled(enabled: Boolean) {
         store.edit { prefs -> prefs[Keys.haptics] = enabled }
+    }
+
+    suspend fun setSpeechRecognition(enabled: Boolean) {
+        store.edit { prefs -> prefs[Keys.speechRecognition] = enabled }
     }
 
     /** Einzelnen Ton-Schalter umlegen. */

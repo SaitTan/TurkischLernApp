@@ -44,6 +44,9 @@ class ExerciseGeneratorTest {
                     }
 
                     is Exercise.MatchPairs -> assertEquals(4, exercise.items.size)
+
+                    is Exercise.Speak ->
+                        assertTrue("Sprech-Aufgabe ohne Wort", exercise.target.tr.isNotBlank())
                 }
             }
         }
@@ -56,6 +59,17 @@ class ExerciseGeneratorTest {
             assertTrue(
                 "${lesson.id} hat ${exercises.size} Aufgaben",
                 exercises.size <= 14
+            )
+        }
+    }
+
+    @Test
+    fun `jede Lektion enthaelt eine Sprech-Aufgabe`() {
+        Curriculum.lessons.forEach { lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(9))
+            assertTrue(
+                "Keine Sprech-Aufgabe in ${lesson.id}",
+                exercises.any { it is Exercise.Speak }
             )
         }
     }
