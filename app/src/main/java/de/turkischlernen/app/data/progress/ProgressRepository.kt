@@ -221,6 +221,14 @@ class ProgressRepository(context: Context) {
         store.edit { prefs -> prefs[Keys.dailyGoal] = goal }
     }
 
+    /** Zusätzliche XP, z. B. für ein beendetes Telefonat. */
+    suspend fun addBonusXp(xp: Int) {
+        store.edit { prefs ->
+            prefs[Keys.totalXp] = (prefs[Keys.totalXp] ?: 0) + xp
+            prefs[Keys.xpToday] = (prefs[Keys.xpToday] ?: 0) + xp
+        }
+    }
+
     /** Eltern-Bereich: Spielzeit direkt setzen. */
     suspend fun setPlayMinutes(minutes: Int) {
         store.edit { prefs -> prefs[Keys.playMinutes] = minutes.coerceIn(0, 999) }

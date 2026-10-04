@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,12 +40,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
 import de.turkischlernen.app.data.content.Curriculum
+import de.turkischlernen.app.data.content.CallScript
+import de.turkischlernen.app.data.content.CallScripts
 import de.turkischlernen.app.data.content.DailyQuests
 import de.turkischlernen.app.data.progress.ChestLogic
 import de.turkischlernen.app.data.progress.LessonRounds
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ThickProgressBar
 import de.turkischlernen.app.ui.path.DailyQuestsCard
+import de.turkischlernen.app.ui.call.CallScreen
 import de.turkischlernen.app.ui.rewards.ChestOverlay
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
@@ -79,6 +83,7 @@ fun GoalsScreen(
     }
 
     var chestToOpen by remember { mutableStateOf<String?>(null) }
+    var laufenderAnruf by remember { mutableStateOf<CallScript?>(null) }
     val reward = remember(chestToOpen, progress.unlockedItems) {
         chestToOpen?.let { ChestLogic.roll(Random(it.hashCode()), progress.unlockedItems) }
     }
@@ -146,6 +151,50 @@ fun GoalsScreen(
                 }
             }
 
+            item(key = "telefonate") {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Telefonate", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Sprich mit dem Kangal auf Türkisch. Antworte laut – " +
+                            "oder tippe die Antwort an.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    CallScripts.all.forEach { script ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                                .clickable { laufenderAnruf = script }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(script.emoji, fontSize = 28.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(script.title, style = MaterialTheme.typography.titleMedium)
+                                Text(
+                                    script.subtitle,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text("📞", fontSize = 22.sp)
+                        }
+                    }
+                }
+            }
+
             item(key = "pfadtruhen") {
                 Column(
                     Modifier
@@ -168,6 +217,11 @@ fun GoalsScreen(
                     )
                 }
             }
+        }
+
+        val anruf = laufenderAnruf
+        if (anruf != null) {
+            CallScreen(script = anruf, onClose = { laufenderAnruf = null })
         }
 
         val offeneTruhe = chestToOpen
