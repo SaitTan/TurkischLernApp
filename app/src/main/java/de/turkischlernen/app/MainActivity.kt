@@ -27,4 +27,10 @@ class MainActivity : ComponentActivity() {
         // Sprachausgabe beim Verlassen der App beenden.
         (application as TurkischApp).container.speech.stop()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Nur beim echten Beenden aufräumen – nicht beim Drehen des Geräts.
+        if (isFinishing) (application as TurkischApp).releaseContainer()
+    }
 }

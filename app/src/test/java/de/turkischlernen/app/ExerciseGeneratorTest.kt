@@ -44,8 +44,54 @@ class ExerciseGeneratorTest {
                     }
 
                     is Exercise.MatchPairs -> assertEquals(4, exercise.items.size)
+
+                    is Exercise.Speak ->
+                        assertTrue("Sprech-Aufgabe ohne Wort", exercise.target.tr.isNotBlank())
+
+                    is Exercise.Write ->
+                        assertTrue("Schreib-Aufgabe ohne Wort", exercise.target.tr.isNotBlank())
                 }
             }
+        }
+    }
+
+    @Test
+    fun `jede Runde ist lang genug, aber nicht endlos`() {
+        Curriculum.lessons.forEach { lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(5))
+            assertTrue(
+                "${lesson.id} hat nur ${exercises.size} Aufgaben",
+                exercises.size >= 28
+            )
+            assertTrue(
+                "${lesson.id} hat ${exercises.size} Aufgaben",
+                exercises.size <= 34
+            )
+        }
+    }
+
+    @Test
+    fun `eine Runde fragt viele verschiedene Vokabeln ab`() {
+        Curriculum.lessons.forEachIndexed { index, lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(13))
+            val vokabeln = exercises.flatMap { it.itemIds }.distinct()
+            // Die allererste Lektion kennt noch keine Wiederholung.
+            val erwartet = if (index == 0) 3 else 6
+            assertTrue(
+                "${lesson.id} fragt nur ${vokabeln.size} Vokabeln ab",
+                vokabeln.size >= erwartet
+            )
+        }
+    }
+
+    @Test
+    fun `jede Lektion enthaelt eine Sprech-Aufgabe`() {
+        Curriculum.lessons.forEach { lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(9))
+            assertTrue(
+                "Keine Sprech-Aufgabe in ${lesson.id}",
+                exercises.any { it is Exercise.Speak }
+            )
         }
     }
 

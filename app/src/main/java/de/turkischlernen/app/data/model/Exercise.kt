@@ -49,6 +49,22 @@ sealed interface Exercise {
         val solution: List<String> get() = target.tokens
     }
 
+    /** Das türkische Wort selbst tippen. */
+    data class Write(
+        val target: LearnItem
+    ) : Exercise {
+        override val itemIds get() = listOf(target.id)
+        override val prompt get() = "Schreib es auf Türkisch"
+    }
+
+    /** Das Wort oder den Satz laut sprechen. */
+    data class Speak(
+        val target: LearnItem
+    ) : Exercise {
+        override val itemIds get() = listOf(target.id)
+        override val prompt get() = "Sprich das laut"
+    }
+
     /** Paare finden: türkisch ↔ deutsch. */
     data class MatchPairs(
         val items: List<LearnItem>

@@ -6,6 +6,21 @@ import java.time.LocalDate
 data class UserProgress(
     val totalXp: Int = 0,
     val xpToday: Int = 0,
+    /** Heute schon durch freies Wiederholen gesammelte XP (begrenzt). */
+    val practiceXpToday: Int = 0,
+    /** Tageszähler für die Tagesaufgaben – werden beim Datumswechsel zurückgesetzt. */
+    val lessonsToday: Int = 0,
+    val perfectToday: Int = 0,
+    val wordsToday: Int = 0,
+    val correctToday: Int = 0,
+    /** Tage, an denen gelernt wurde (ISO-Datum), und die längste je erreichte Serie. */
+    val activeDays: Set<String> = emptySet(),
+    val longestStreak: Int = 0,
+    /** Verdiente PlayStation-Minuten: eine pro abgeschlossener Lektion. */
+    val playMinutes: Int = 0,
+    /** Bereits geöffnete Schatztruhen und daraus freigeschaltete Teile. */
+    val openedChests: Set<String> = emptySet(),
+    val unlockedItems: Set<String> = emptySet(),
     val dailyGoal: Int = 30,
     val streakDays: Int = 0,
     val lastActiveDate: String = "",
@@ -13,6 +28,8 @@ data class UserProgress(
     val heartsUpdatedAt: Long = 0L,
     val unlimitedHearts: Boolean = true,
     val completedLessons: Set<String> = emptySet(),
+    /** Gespielte Runden je Lektion – bestimmt Farbe, Freischaltung und Spielzeit. */
+    val lessonRounds: Map<String, Int> = emptyMap(),
     val perfectLessons: Set<String> = emptySet(),
     val learnedItems: Set<String> = emptySet(),
     val mistakeItems: Set<String> = emptySet(),
@@ -22,10 +39,16 @@ data class UserProgress(
 
     fun isLessonDone(lessonId: String): Boolean = lessonId in completedLessons
 
+    /** Wie oft diese Lektion schon gespielt wurde. */
+    fun roundsOf(lessonId: String): Int = lessonRounds[lessonId] ?: 0
+
     fun hasHeartsLeft(): Boolean = unlimitedHearts || hearts > 0
 
     companion object {
         const val MAX_HEARTS = 5
+
+        /** Mehr XP als das pro Tag gibt freies Wiederholen nicht. */
+        const val PRACTICE_XP_DAILY_CAP = 20
 
         /** Ein Herz wächst alle 20 Minuten nach. */
         const val HEART_REFILL_MILLIS = 20L * 60L * 1000L
@@ -64,4 +87,12 @@ object ProgressLogic {
 
     /** XP einer Lektion inkl. Bonus für eine fehlerfreie Runde. */
     fun lessonXp(baseXp: Int, mistakes: Int): Int = if (mistakes == 0) baseXp + 5 else baseXp
+
+    /**
+     * XP für freies Wiederholen. Pro Tag gibt es dafür höchstens
+     * [UserProgress.PRACTICE_XP_DAILY_CAP] – sonst ließe sich das Tagesziel
+     * beliebig oft in Sekunden erfüllen.
+     */
+    fun practiceXp(baseXp: Int, practiceXpToday: Int): Int =
+        (UserProgress.PRACTICE_XP_DAILY_CAP - practiceXpToday).coerceIn(0, baseXp)
 }

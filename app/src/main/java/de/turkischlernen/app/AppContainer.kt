@@ -2,9 +2,12 @@ package de.turkischlernen.app
 
 import android.content.Context
 import androidx.compose.runtime.compositionLocalOf
+import de.turkischlernen.app.audio.Haptics
 import de.turkischlernen.app.audio.SoundPlayer
+import de.turkischlernen.app.audio.SpeechListener
 import de.turkischlernen.app.audio.SpeechManager
 import de.turkischlernen.app.data.progress.ProgressRepository
+import de.turkischlernen.app.data.settings.SettingsRepository
 
 /**
  * Einfache, manuelle Dependency-Verwaltung (kein DI-Framework nötig).
@@ -12,11 +15,18 @@ import de.turkischlernen.app.data.progress.ProgressRepository
  */
 class AppContainer(context: Context) {
     val progressRepository: ProgressRepository = ProgressRepository(context)
+    val settingsRepository: SettingsRepository = SettingsRepository(context)
     val speech: SpeechManager = SpeechManager(context)
-    val sounds: SoundPlayer = SoundPlayer()
+    val speechListener: SpeechListener = SpeechListener(context)
+    val sounds: SoundPlayer = SoundPlayer(context) { kind ->
+        val einstellungen = settingsRepository.current.value
+        einstellungen.soundEnabled && einstellungen.sounds.isOn(kind)
+    }
+    val haptics: Haptics = Haptics(context) { settingsRepository.current.value.hapticsEnabled }
 
     fun release() {
         speech.shutdown()
+        speechListener.stop()
         sounds.release()
     }
 }

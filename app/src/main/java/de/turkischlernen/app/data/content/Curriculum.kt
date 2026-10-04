@@ -1,5 +1,6 @@
 package de.turkischlernen.app.data.content
 
+import de.turkischlernen.app.data.model.LearnItem
 import de.turkischlernen.app.data.model.LearnUnit
 import de.turkischlernen.app.data.model.Lesson
 import de.turkischlernen.app.data.model.LessonKind
@@ -137,7 +138,8 @@ object Curriculum {
 
     /** Alle Vokabeln der App. */
     val words: List<Word> =
-        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle
+        essen + tiere + natur + zuhause + farben + zahlen + familie + begruessung + gefuehle +
+            ExpandedCurriculum.words + EverydayCurriculum.words
 
     // ----------------------------------------------------------------- Sätze
 
@@ -167,7 +169,8 @@ object Curriculum {
     )
 
     /** Alle Sätze der App. */
-    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze
+    val phrases: List<Phrase> = begruessungSaetze + alltagSaetze +
+        ExpandedCurriculum.phrases + EverydayCurriculum.phrases
 
     // --------------------------------------------------------------- Einheiten
 
@@ -246,7 +249,17 @@ object Curriculum {
             words = gefuehle,
             phrases = alltagSaetze
         )
-    )
+    ) + (ExpandedCurriculum.units + EverydayCurriculum.units).map { content ->
+        buildUnit(
+            id = content.id,
+            title = content.title,
+            subtitle = content.subtitle,
+            emoji = content.emoji,
+            colorHex = content.colorHex,
+            words = content.words,
+            phrases = content.phrases
+        )
+    }
 
     // ------------------------------------------------------------ Nachschlagen
 
@@ -273,6 +286,32 @@ object Curriculum {
     /** Zu welcher Einheit gehört eine Vokabel? (für passende Antwortauswahl) */
     fun unitIdOfItem(itemId: String): String? = unitIdByItemId[itemId]
 
+    /**
+     * Vokabeln aus früheren Lektionen – sie kommen in neuen Runden zum Wiederholen
+     * dazu, damit nicht immer dieselben paar Wörter abgefragt werden.
+     */
+    fun reviewItems(lesson: Lesson, limit: Int = 8): List<LearnItem> {
+        val position = lessons.indexOfFirst { it.id == lesson.id }
+        if (position <= 0) return emptyList()
+
+        val davor = lessons.take(position)
+        fun vokabeln(auswahl: List<Lesson>): List<LearnItem> = auswahl
+            .flatMap { it.itemIds }
+            .mapNotNull { item(it) }
+            .filter { vokabel -> vokabel.id !in lesson.itemIds }
+            .distinctBy { it.id }
+
+        // Zuerst die eigene Einheit – in einer Zahlen-Lektion sollen keine Farben kommen.
+        val eigeneEinheit = vokabeln(davor.filter { it.unitId == lesson.unitId })
+        if (eigeneEinheit.size >= MIN_OWN_REVIEW) return eigeneEinheit.takeLast(limit)
+
+        val fremdeEinheiten = vokabeln(davor.filter { it.unitId != lesson.unitId })
+        return (eigeneEinheit + fremdeEinheiten.takeLast(limit - eigeneEinheit.size)).take(limit)
+    }
+
+    /** Ab so vielen eigenen Vokabeln bleibt die Wiederholung in der Einheit. */
+    private const val MIN_OWN_REVIEW = 4
+
     /** Gesamtzahl aller lernbaren Einträge (für die Fortschrittsanzeige). */
     val totalItemCount: Int get() = words.size + phrases.size
 
@@ -283,6 +322,23 @@ object Curriculum {
      * bzw. [phrasesPerLesson] Sätze ergeben eine Lektion, am Ende steht immer
      * eine Abschlussprüfung über die ganze Einheit.
      */
+    /**
+     * Teilt eine Liste in möglichst gleich große Blöcke. `chunked` ließe sonst
+     * Reste von einer einzigen Vokabel übrig – eine Lektion mit nur einem Wort.
+     */
+    private fun <T> balancedChunks(items: List<T>, targetSize: Int): List<List<T>> {
+        if (items.isEmpty()) return emptyList()
+        val anzahl = maxOf(1, Math.round(items.size / targetSize.toDouble()).toInt())
+        val basis = items.size / anzahl
+        val rest = items.size % anzahl
+
+        var start = 0
+        return (0 until anzahl).map { block ->
+            val groesse = basis + if (block < rest) 1 else 0
+            items.subList(start, start + groesse).also { start += groesse }
+        }
+    }
+
     private fun buildUnit(
         id: String,
         title: String,
@@ -295,25 +351,31 @@ object Curriculum {
         phrasesPerLesson: Int = 2
     ): LearnUnit {
         val lessons = mutableListOf<Lesson>()
+        // index nummeriert die IDs durch und darf sich nie ändern (gespeicherter
+        // Fortschritt). Die Titel zählen Wort- und Satz-Lektionen getrennt.
         var index = 0
+        var wordLessonNumber = 0
+        var phraseLessonNumber = 0
 
-        words.chunked(wordsPerLesson).forEach { chunk ->
+        balancedChunks(words, wordsPerLesson).forEach { chunk ->
             index++
+            wordLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Lektion $index",
+                title = "Lektion $wordLessonNumber",
                 wordIds = chunk.map { it.id }
             )
         }
-        phrases.chunked(phrasesPerLesson).forEach { chunk ->
+        balancedChunks(phrases, phrasesPerLesson).forEach { chunk ->
             index++
+            phraseLessonNumber++
             lessons += Lesson(
                 id = "${id}_l$index",
                 unitId = id,
                 index = index,
-                title = "Sätze $index",
+                title = "Sätze $phraseLessonNumber",
                 phraseIds = chunk.map { it.id }
             )
         }

@@ -16,43 +16,68 @@ object ExerciseGenerator {
 
     private const val OPTION_COUNT = 4
 
+    /** So lang ist eine Runde: genug zum Üben, ohne endlos zu werden. */
+    private const val TARGET_EXERCISES_PER_LESSON = 28
+
+    /** Sicherheitsnetz gegen Endlosschleifen beim Auffüllen. */
+    private const val MAX_FILL_STEPS = 400
+
     fun forLesson(lesson: Lesson, random: Random = Random.Default): List<Exercise> {
         val words = lesson.wordIds.mapNotNull { Curriculum.word(it) }
         val phrases = lesson.phraseIds.mapNotNull { Curriculum.phrase(it) }
+        val items: List<LearnItem> = words + phrases
+        if (items.isEmpty()) return emptyList()
+
         val exercises = mutableListOf<Exercise>()
 
-        // 1. Neue Wörter immer zuerst mit Bild einführen.
+        // 1. Einführung: jedes neue Wort zuerst mit Bild, jeder Satz mit Bedeutung.
         words.forEach { word ->
             exercises += Exercise.PictureChoice(word, options(word, random))
         }
-
-        // 2. Danach abwechselnd Bedeutung und Hörverstehen.
-        words.forEachIndexed { index, word ->
-            exercises += if (index % 2 == 0) {
-                Exercise.TranslateToGerman(word, options(word, random))
-            } else {
-                Exercise.Listening(word, options(word, random))
-            }
-        }
-
-        // 3. Sätze: erst hören/verstehen, dann selbst zusammenbauen.
         phrases.forEach { phrase ->
             exercises += Exercise.TranslateToGerman(phrase, options(phrase, random))
-            exercises += wordBank(phrase, random)
+        }
+
+        // 2. Hauptteil: die neuen Wörter und Vokabeln aus früheren Lektionen kommen
+        //    reihum in wechselnden Aufgabentypen, bis die Runde lang genug ist.
+        val wiederholung = Curriculum.reviewItems(lesson)
+        val pool = (items + wiederholung).distinctBy { it.id }
+
+        var schritt = 0
+        while (exercises.size < TARGET_EXERCISES_PER_LESSON && schritt < MAX_FILL_STEPS) {
+            val item = pool[schritt % pool.size]
+            val runde = schritt / pool.size
+
+            exercises += when (runde % 5) {
+                0 -> Exercise.TranslateToGerman(item, options(item, random))
+                1 -> Exercise.Listening(item, options(item, random))
+                2 -> if (item is Phrase) wordBank(item, random) else Exercise.Speak(item)
+                3 -> if (item is Phrase) {
+                    Exercise.TranslateToGerman(item, options(item, random))
+                } else {
+                    Exercise.Write(item)
+                }
+                else -> if (item is Phrase) {
+                    wordBank(item, random)
+                } else {
+                    Exercise.PictureChoice(item, options(item, random))
+                }
+            }
+            schritt++
+        }
+
+        // 3. Sprechen gehört in jede Runde.
+        if (exercises.none { it is Exercise.Speak }) {
+            exercises += Exercise.Speak(items.first())
         }
 
         // 4. In der Prüfung zusätzlich Paare finden.
-        val pairPool = (words + phrases).shuffled(random)
+        val pairPool = items.shuffled(random)
         if (lesson.kind == LessonKind.TEST && pairPool.size >= 4) {
             exercises += Exercise.MatchPairs(pairPool.take(4))
         }
 
-        // Die erste Aufgabe bleibt eine Bildaufgabe, der Rest wird gemischt.
-        return if (exercises.size > 1) {
-            listOf(exercises.first()) + exercises.drop(1).shuffled(random)
-        } else {
-            exercises
-        }
+        return exercises
     }
 
     /**
