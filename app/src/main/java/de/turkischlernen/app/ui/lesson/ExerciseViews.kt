@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -628,6 +629,53 @@ fun SpeakView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+/**
+ * Schreib-Aufgabe: Die deutsche Bedeutung steht da, das tuerkische Wort wird getippt.
+ * Tuerkische Sonderzeichen sind nicht noetig, ein Tippfehler wird verziehen.
+ */
+@Composable
+fun WriteView(
+    exercise: Exercise.Write,
+    interaction: ExerciseInteraction,
+    locked: Boolean,
+    onSpeak: (String, Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        ItemIllustration(exercise.target, size = 110.dp)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            exercise.target.de,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(14.dp))
+
+        OutlinedTextField(
+            value = interaction.typedText,
+            onValueChange = { eingabe -> if (!locked) interaction.typedText = eingabe },
+            enabled = !locked,
+            singleLine = true,
+            label = { Text("Auf Türkisch") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Sonderzeichen sind nicht nötig: „cay“ gilt wie „çay“.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        if (locked) {
+            Spacer(Modifier.height(10.dp))
+            SpeakerButton { onSpeak(exercise.target.tr, false) }
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import de.turkischlernen.app.data.content.SpeechMatch
 import de.turkischlernen.app.data.model.Exercise
 
 /** Eingabezustand der aktuell sichtbaren Aufgabe. */
@@ -20,6 +21,9 @@ class ExerciseInteraction {
 
     /** Falsch zusammengetippte Paare – zählt für die Bewertung der Aufgabe. */
     var pairMistakes by mutableIntStateOf(0)
+
+    /** Getippte Antwort bei Schreib-Aufgaben. */
+    var typedText by mutableStateOf("")
 
     /** Was die Spracherkennung verstanden hat. */
     var heardText by mutableStateOf<String?>(null)
@@ -43,6 +47,7 @@ fun isAnswerReady(exercise: Exercise, interaction: ExerciseInteraction): Boolean
         is Exercise.WordBank -> interaction.chosenTiles.isNotEmpty()
         is Exercise.MatchPairs -> interaction.matchedCount >= exercise.items.size
         is Exercise.Speak -> interaction.speakDone
+        is Exercise.Write -> interaction.typedText.isNotBlank()
     }
 
 /** Wertet die Antwort aus. */
@@ -60,7 +65,13 @@ fun isAnswerCorrect(exercise: Exercise, interaction: ExerciseInteraction): Boole
         // Nur fehlerfrei gefundene Paare gelten als richtig gelöst.
         is Exercise.MatchPairs -> interaction.pairMistakes == 0
         is Exercise.Speak -> interaction.speakCorrect
+        // Tippfehler und fehlende türkische Sonderzeichen werden verziehen.
+        is Exercise.Write ->
+            SpeechMatch.similarity(interaction.typedText, exercise.target.tr) >= WRITE_THRESHOLD
     }
+
+/** Ab dieser Ähnlichkeit gilt Geschriebenes als richtig. */
+private const val WRITE_THRESHOLD = 0.85
 
 /** Text der richtigen Lösung – wird bei einem Fehler eingeblendet. */
 fun correctAnswerText(exercise: Exercise): String = when (exercise) {
@@ -70,6 +81,7 @@ fun correctAnswerText(exercise: Exercise): String = when (exercise) {
     is Exercise.WordBank -> exercise.target.tr
     is Exercise.MatchPairs -> ""
     is Exercise.Speak -> exercise.target.tr
+    is Exercise.Write -> exercise.target.tr
 }
 
 /** Text, der nach der Antwort vorgelesen wird (immer Türkisch). */
@@ -80,4 +92,5 @@ fun spokenText(exercise: Exercise): String = when (exercise) {
     is Exercise.WordBank -> exercise.target.tr
     is Exercise.MatchPairs -> ""
     is Exercise.Speak -> exercise.target.tr
+    is Exercise.Write -> exercise.target.tr
 }

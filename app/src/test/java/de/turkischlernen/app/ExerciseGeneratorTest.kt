@@ -47,6 +47,9 @@ class ExerciseGeneratorTest {
 
                     is Exercise.Speak ->
                         assertTrue("Sprech-Aufgabe ohne Wort", exercise.target.tr.isNotBlank())
+
+                    is Exercise.Write ->
+                        assertTrue("Schreib-Aufgabe ohne Wort", exercise.target.tr.isNotBlank())
                 }
             }
         }

@@ -293,13 +293,24 @@ object Curriculum {
     fun reviewItems(lesson: Lesson, limit: Int = 8): List<LearnItem> {
         val position = lessons.indexOfFirst { it.id == lesson.id }
         if (position <= 0) return emptyList()
-        return lessons.take(position)
+
+        val davor = lessons.take(position)
+        fun vokabeln(auswahl: List<Lesson>): List<LearnItem> = auswahl
             .flatMap { it.itemIds }
             .mapNotNull { item(it) }
             .filter { vokabel -> vokabel.id !in lesson.itemIds }
             .distinctBy { it.id }
-            .takeLast(limit)
+
+        // Zuerst die eigene Einheit – in einer Zahlen-Lektion sollen keine Farben kommen.
+        val eigeneEinheit = vokabeln(davor.filter { it.unitId == lesson.unitId })
+        if (eigeneEinheit.size >= MIN_OWN_REVIEW) return eigeneEinheit.takeLast(limit)
+
+        val fremdeEinheiten = vokabeln(davor.filter { it.unitId != lesson.unitId })
+        return (eigeneEinheit + fremdeEinheiten.takeLast(limit - eigeneEinheit.size)).take(limit)
     }
+
+    /** Ab so vielen eigenen Vokabeln bleibt die Wiederholung in der Einheit. */
+    private const val MIN_OWN_REVIEW = 4
 
     /** Gesamtzahl aller lernbaren Einträge (für die Fortschrittsanzeige). */
     val totalItemCount: Int get() = words.size + phrases.size

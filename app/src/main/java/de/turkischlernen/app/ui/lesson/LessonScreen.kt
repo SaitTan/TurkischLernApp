@@ -252,6 +252,9 @@ fun LessonScreen(
                 is Exercise.Speak ->
                     SpeakView(exercise, interaction, locked, speak)
 
+                is Exercise.Write ->
+                    WriteView(exercise, interaction, locked, speak)
+
                 is Exercise.MatchPairs ->
                     Column {
                         MatchPairsView(

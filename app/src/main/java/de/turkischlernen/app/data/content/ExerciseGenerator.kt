@@ -48,12 +48,17 @@ object ExerciseGenerator {
             val item = pool[schritt % pool.size]
             val runde = schritt / pool.size
 
-            exercises += when (runde % 4) {
+            exercises += when (runde % 5) {
                 0 -> Exercise.TranslateToGerman(item, options(item, random))
                 1 -> Exercise.Listening(item, options(item, random))
                 2 -> if (item is Phrase) wordBank(item, random) else Exercise.Speak(item)
-                else -> if (item is Phrase) {
+                3 -> if (item is Phrase) {
                     Exercise.TranslateToGerman(item, options(item, random))
+                } else {
+                    Exercise.Write(item)
+                }
+                else -> if (item is Phrase) {
+                    wordBank(item, random)
                 } else {
                     Exercise.PictureChoice(item, options(item, random))
                 }
