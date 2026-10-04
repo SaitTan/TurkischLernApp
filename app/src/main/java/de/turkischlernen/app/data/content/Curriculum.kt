@@ -1,5 +1,6 @@
 package de.turkischlernen.app.data.content
 
+import de.turkischlernen.app.data.model.LearnItem
 import de.turkischlernen.app.data.model.LearnUnit
 import de.turkischlernen.app.data.model.Lesson
 import de.turkischlernen.app.data.model.LessonKind
@@ -285,6 +286,21 @@ object Curriculum {
     /** Zu welcher Einheit gehört eine Vokabel? (für passende Antwortauswahl) */
     fun unitIdOfItem(itemId: String): String? = unitIdByItemId[itemId]
 
+    /**
+     * Vokabeln aus früheren Lektionen – sie kommen in neuen Runden zum Wiederholen
+     * dazu, damit nicht immer dieselben paar Wörter abgefragt werden.
+     */
+    fun reviewItems(lesson: Lesson, limit: Int = 8): List<LearnItem> {
+        val position = lessons.indexOfFirst { it.id == lesson.id }
+        if (position <= 0) return emptyList()
+        return lessons.take(position)
+            .flatMap { it.itemIds }
+            .mapNotNull { item(it) }
+            .filter { vokabel -> vokabel.id !in lesson.itemIds }
+            .distinctBy { it.id }
+            .takeLast(limit)
+    }
+
     /** Gesamtzahl aller lernbaren Einträge (für die Fortschrittsanzeige). */
     val totalItemCount: Int get() = words.size + phrases.size
 
@@ -295,6 +311,23 @@ object Curriculum {
      * bzw. [phrasesPerLesson] Sätze ergeben eine Lektion, am Ende steht immer
      * eine Abschlussprüfung über die ganze Einheit.
      */
+    /**
+     * Teilt eine Liste in möglichst gleich große Blöcke. `chunked` ließe sonst
+     * Reste von einer einzigen Vokabel übrig – eine Lektion mit nur einem Wort.
+     */
+    private fun <T> balancedChunks(items: List<T>, targetSize: Int): List<List<T>> {
+        if (items.isEmpty()) return emptyList()
+        val anzahl = maxOf(1, Math.round(items.size / targetSize.toDouble()).toInt())
+        val basis = items.size / anzahl
+        val rest = items.size % anzahl
+
+        var start = 0
+        return (0 until anzahl).map { block ->
+            val groesse = basis + if (block < rest) 1 else 0
+            items.subList(start, start + groesse).also { start += groesse }
+        }
+    }
+
     private fun buildUnit(
         id: String,
         title: String,
@@ -313,7 +346,7 @@ object Curriculum {
         var wordLessonNumber = 0
         var phraseLessonNumber = 0
 
-        words.chunked(wordsPerLesson).forEach { chunk ->
+        balancedChunks(words, wordsPerLesson).forEach { chunk ->
             index++
             wordLessonNumber++
             lessons += Lesson(
@@ -324,7 +357,7 @@ object Curriculum {
                 wordIds = chunk.map { it.id }
             )
         }
-        phrases.chunked(phrasesPerLesson).forEach { chunk ->
+        balancedChunks(phrases, phrasesPerLesson).forEach { chunk ->
             index++
             phraseLessonNumber++
             lessons += Lesson(

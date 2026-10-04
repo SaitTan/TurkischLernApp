@@ -38,12 +38,15 @@ object ExerciseGenerator {
             exercises += Exercise.TranslateToGerman(phrase, options(phrase, random))
         }
 
-        // 2. Hauptteil: die Wörter der Lektion kommen reihum in wechselnden
-        //    Aufgabentypen wieder, bis die Runde lang genug ist.
+        // 2. Hauptteil: die neuen Wörter und Vokabeln aus früheren Lektionen kommen
+        //    reihum in wechselnden Aufgabentypen, bis die Runde lang genug ist.
+        val wiederholung = Curriculum.reviewItems(lesson)
+        val pool = (items + wiederholung).distinctBy { it.id }
+
         var schritt = 0
         while (exercises.size < TARGET_EXERCISES_PER_LESSON && schritt < MAX_FILL_STEPS) {
-            val item = items[schritt % items.size]
-            val runde = schritt / items.size
+            val item = pool[schritt % pool.size]
+            val runde = schritt / pool.size
 
             exercises += when (runde % 4) {
                 0 -> Exercise.TranslateToGerman(item, options(item, random))

@@ -68,6 +68,20 @@ class ExerciseGeneratorTest {
     }
 
     @Test
+    fun `eine Runde fragt viele verschiedene Vokabeln ab`() {
+        Curriculum.lessons.forEachIndexed { index, lesson ->
+            val exercises = ExerciseGenerator.forLesson(lesson, Random(13))
+            val vokabeln = exercises.flatMap { it.itemIds }.distinct()
+            // Die allererste Lektion kennt noch keine Wiederholung.
+            val erwartet = if (index == 0) 3 else 6
+            assertTrue(
+                "${lesson.id} fragt nur ${vokabeln.size} Vokabeln ab",
+                vokabeln.size >= erwartet
+            )
+        }
+    }
+
+    @Test
     fun `jede Lektion enthaelt eine Sprech-Aufgabe`() {
         Curriculum.lessons.forEach { lesson ->
             val exercises = ExerciseGenerator.forLesson(lesson, Random(9))

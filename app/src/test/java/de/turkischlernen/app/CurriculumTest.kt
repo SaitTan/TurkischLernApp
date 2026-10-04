@@ -28,6 +28,16 @@ class CurriculumTest {
     }
 
     @Test
+    fun `keine Lektion besteht aus nur einer Vokabel`() {
+        Curriculum.lessons.forEach { lesson ->
+            assertTrue(
+                "${lesson.id} hat nur ${lesson.itemIds.size} Vokabel",
+                lesson.itemIds.size >= 2
+            )
+        }
+    }
+
+    @Test
     fun `jede Einheit endet mit einer Pruefung`() {
         Curriculum.units.forEach { unit ->
             assertTrue(unit.lessons.isNotEmpty())
