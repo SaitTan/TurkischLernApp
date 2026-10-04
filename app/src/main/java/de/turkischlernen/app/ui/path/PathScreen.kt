@@ -42,9 +42,12 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.LocalAppContainer
@@ -64,6 +67,8 @@ import de.turkischlernen.app.ui.mascot.MascotMood
 import de.turkischlernen.app.ui.rewards.ChestOverlay
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.random.Random
 
 /** Farbe der noch offenen Ring-Segmente am Knoten. */
@@ -413,13 +418,13 @@ private fun LessonNode(
         Box(
             Modifier
                 .offset(x = offsetX)
-                .size(104.dp),
+                .size(116.dp),
             contentAlignment = Alignment.Center
         ) {
             // Ein Bogen je Runde, mit Luecken dazwischen – wie im Vorbild.
             // Fertige Lektionen brauchen keinen Ring, da spricht die Farbe.
             if (stage == NodeStage.OPEN || stage == NodeStage.IN_PROGRESS) {
-                Canvas(Modifier.size(96.dp)) {
+                Canvas(Modifier.size(108.dp)) {
                     val strich = 7.dp.toPx()
                     val rand = strich / 2f
                     val segmente = LessonRounds.ROUNDS_PER_LESSON
@@ -457,11 +462,11 @@ private fun LessonNode(
                     .clickable { onClick() },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = if (stage == NodeStage.LOCKED) "🔒" else "★",
-                    fontSize = if (stage == NodeStage.LOCKED) 28.sp else 38.sp,
-                    color = Color.White
-                )
+                if (stage == NodeStage.LOCKED) {
+                    Text("🔒", fontSize = 28.sp)
+                } else {
+                    StarIcon(size = 34.dp, color = Color.White)
+                }
             }
 
             // Das Maskottchen sitzt neben der Lektion, die als Nächstes dran ist.
@@ -485,6 +490,36 @@ private fun LessonNode(
             modifier = Modifier
                 .offset(x = offsetX)
                 .padding(top = 6.dp)
+        )
+    }
+}
+
+/** Fünfzackiger Stern mit runden Ecken, exakt mittig im Knoten. */
+@Composable
+private fun StarIcon(size: Dp, color: Color) {
+    Canvas(Modifier.size(size)) {
+        val radius = this.size.minDimension / 2f
+        val mitteX = this.size.width / 2f
+        val mitteY = this.size.height / 2f
+        val aussen = radius * 0.86f
+        val innen = radius * 0.42f
+
+        val stern = Path()
+        repeat(10) { punkt ->
+            val winkel = Math.toRadians((-90 + punkt * 36).toDouble())
+            val laenge = if (punkt % 2 == 0) aussen else innen
+            val x = mitteX + (laenge * cos(winkel)).toFloat()
+            val y = mitteY + (laenge * sin(winkel)).toFloat()
+            if (punkt == 0) stern.moveTo(x, y) else stern.lineTo(x, y)
+        }
+        stern.close()
+
+        drawPath(stern, color = color)
+        // Runder Umriss, damit die Zacken weich wirken.
+        drawPath(
+            stern,
+            color = color,
+            style = Stroke(width = radius * 0.26f, join = StrokeJoin.Round, cap = StrokeCap.Round)
         )
     }
 }
