@@ -43,13 +43,22 @@ class DailyQuestsTest {
             lessonsToday = 1,
             perfectToday = 2,
             wordsToday = 7,
-            correctToday = 9
+            correctToday = 9,
+            reviewedToday = 4
         )
         assertEquals(1, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.LESSONS }, progress))
         assertEquals(12, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.XP }, progress))
         assertEquals(2, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.PERFECT }, progress))
         assertEquals(7, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.WORDS }, progress))
         assertEquals(9, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.CORRECT }, progress))
+        assertEquals(4, DailyQuests.progressOf(DailyQuests.pool.first { it.kind == QuestKind.REVIEW }, progress))
+    }
+
+    @Test
+    fun `es gibt eine Aufgabe zum Auffrischen`() {
+        val quest = DailyQuests.pool.first { it.kind == QuestKind.REVIEW }
+        assertFalse(DailyQuests.isDone(quest, UserProgress(reviewedToday = quest.goal - 1)))
+        assertTrue(DailyQuests.isDone(quest, UserProgress(reviewedToday = quest.goal)))
     }
 
     @Test
@@ -70,7 +79,8 @@ class DailyQuestsTest {
             lessonsToday = 10,
             perfectToday = 5,
             wordsToday = 50,
-            correctToday = 50
+            correctToday = 50,
+            reviewedToday = 50
         )
         assertTrue(DailyQuests.allDone(tag, voll))
     }

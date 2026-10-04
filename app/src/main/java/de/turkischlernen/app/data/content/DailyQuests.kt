@@ -5,7 +5,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 /** Worauf sich eine Tagesaufgabe bezieht. */
-enum class QuestKind { LESSONS, XP, PERFECT, WORDS, CORRECT }
+enum class QuestKind { LESSONS, XP, PERFECT, WORDS, CORRECT, REVIEW }
 
 /** Eine Tagesaufgabe mit Ziel, Text und Symbol. */
 data class Quest(
@@ -31,7 +31,8 @@ object DailyQuests {
         Quest("xp40", QuestKind.XP, 40, "Sammle 40 XP", "🌟"),
         Quest("perfekt1", QuestKind.PERFECT, 1, "Beende eine Runde ohne Fehler", "🎯"),
         Quest("woerter10", QuestKind.WORDS, 10, "Übe 10 Wörter", "🔤"),
-        Quest("richtig15", QuestKind.CORRECT, 15, "Antworte 15-mal richtig", "👍")
+        Quest("richtig15", QuestKind.CORRECT, 15, "Antworte 15-mal richtig", "👍"),
+        Quest("auffrischen10", QuestKind.REVIEW, 10, "Frische 10 Wörter auf", "🔁")
     )
 
     /** Drei verschiedene Aufgaben für [date]. */
@@ -44,6 +45,7 @@ object DailyQuests {
         QuestKind.PERFECT -> progress.perfectToday
         QuestKind.WORDS -> progress.wordsToday
         QuestKind.CORRECT -> progress.correctToday
+        QuestKind.REVIEW -> progress.reviewedToday
     }
 
     fun isDone(quest: Quest, progress: UserProgress): Boolean =

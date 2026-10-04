@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,9 +29,11 @@ import androidx.compose.ui.unit.sp
 import de.turkischlernen.app.data.content.Curriculum
 import de.turkischlernen.app.data.model.LearnItem
 import de.turkischlernen.app.data.model.Word
+import de.turkischlernen.app.data.progress.ReviewLogic
 import de.turkischlernen.app.data.progress.UserProgress
 import de.turkischlernen.app.ui.components.ChunkyButton
 import de.turkischlernen.app.ui.theme.AppColors
+import java.time.LocalDate
 
 /**
  * "Wiederholen": Wörterliste zum Nachhören plus zwei Übungs-Modi
@@ -44,6 +49,16 @@ fun PracticeScreen(
     val learned: List<LearnItem> = progress.learnedItems.mapNotNull { Curriculum.item(it) }
     val mistakes: List<LearnItem> = progress.mistakeItems.mapNotNull { Curriculum.item(it) }
 
+    val heute = LocalDate.now()
+    // Heute fällige Wörter, dringendste zuerst – nur solche, die er schon gelernt hat.
+    val faelligMitStand: List<LearnItem> = ReviewLogic
+        .dueItems(progress.reviews.values, heute)
+        .mapNotNull { Curriculum.item(it.itemId) }
+        .filter { it.id in progress.learnedItems }
+    // Wörter von früher, für die es noch keinen Lernstand gibt, sind sofort dran.
+    val ohneStand: List<LearnItem> = learned.filter { it.id !in progress.reviews }
+    val faellig: List<LearnItem> = faelligMitStand + ohneStand
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -58,6 +73,22 @@ fun PracticeScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(14.dp))
+                ChunkyButton(
+                    text = if (faellig.isEmpty()) "HEUTE NICHTS FÄLLIG 👍"
+                    else "AUFFRISCHEN (${faellig.size} Wörter)",
+                    modifier = Modifier.fillMaxWidth(),
+                    color = AppColors.Green,
+                    enabled = faellig.isNotEmpty()
+                ) { onPractice(faellig.map { it.id }) }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Diese Wörter kommen heute dran – danach dauert es wieder länger, " +
+                        "bis sie wiederkommen.",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(14.dp))
+
                 ChunkyButton(
                     text = if (mistakes.isEmpty()) "KEINE SCHWIERIGEN WÖRTER 👍"
                     else "SCHWIERIGE WÖRTER ÜBEN (${mistakes.size})",
@@ -87,10 +118,16 @@ fun PracticeScreen(
             }
         }
 
-        items(learned.sortedBy { it.de }, key = { it.id }) { item ->
+        val sortiert = learned.sortedWith(
+            compareByDescending<LearnItem> { wort -> faellig.any { it.id == wort.id } }
+                .thenBy { it.de }
+        )
+        items(sortiert, key = { it.id }) { item ->
             WordRow(
                 item = item,
                 isTricky = item.id in progress.mistakeItems,
+                isDue = faellig.any { it.id == item.id },
+                level = progress.reviews[item.id]?.level ?: 0,
                 onSpeak = onSpeak
             )
         }
@@ -101,6 +138,8 @@ fun PracticeScreen(
 private fun WordRow(
     item: LearnItem,
     isTricky: Boolean,
+    isDue: Boolean,
+    level: Int,
     onSpeak: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -108,7 +147,11 @@ private fun WordRow(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .border(2.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
+            .border(
+                width = if (isDue) 3.dp else 2.dp,
+                color = if (isDue) AppColors.Green else MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(16.dp)
+            )
             .background(MaterialTheme.colorScheme.background)
             .clickable { onSpeak(item.tr, false) }
             .padding(12.dp),
@@ -127,7 +170,27 @@ private fun WordRow(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            Spacer(Modifier.height(4.dp))
+            ReviewDots(level = level)
         }
         Text("🔊", fontSize = 22.sp)
+    }
+}
+
+/** Lernstand als Punkte: gefüllt = geschaffte Stufe. */
+@Composable
+private fun ReviewDots(level: Int, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        repeat(ReviewLogic.MAX_LEVEL) { stufe ->
+            Box(
+                Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (stufe < level) AppColors.Green
+                        else MaterialTheme.colorScheme.outline
+                    )
+            )
+        }
     }
 }

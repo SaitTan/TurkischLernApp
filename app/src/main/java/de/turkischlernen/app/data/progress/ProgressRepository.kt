@@ -44,6 +44,8 @@ class ProgressRepository(context: Context) {
         val unlimitedHearts = booleanPreferencesKey("unlimited_hearts")
         val completed = stringSetPreferencesKey("completed_lessons")
         val lessonRounds = stringSetPreferencesKey("lesson_rounds")
+        val itemReviews = stringSetPreferencesKey("item_reviews")
+        val reviewedToday = intPreferencesKey("reviewed_today")
         val perfect = stringSetPreferencesKey("perfect_lessons")
         val learned = stringSetPreferencesKey("learned_items")
         val mistakes = stringSetPreferencesKey("mistake_items")
@@ -61,6 +63,8 @@ class ProgressRepository(context: Context) {
             perfectToday = this[Keys.perfectToday] ?: 0,
             wordsToday = this[Keys.wordsToday] ?: 0,
             correctToday = this[Keys.correctToday] ?: 0,
+            reviews = ReviewLogic.decode(this[Keys.itemReviews] ?: emptySet()),
+            reviewedToday = this[Keys.reviewedToday] ?: 0,
             playMinutes = this[Keys.playMinutes] ?: 0,
             activeDays = this[Keys.activeDays] ?: emptySet(),
             longestStreak = this[Keys.longestStreak] ?: 0,
@@ -93,6 +97,7 @@ class ProgressRepository(context: Context) {
             perfectToday = if (raw.lastActiveDate == today) raw.perfectToday else 0,
             wordsToday = if (raw.lastActiveDate == today) raw.wordsToday else 0,
             correctToday = if (raw.lastActiveDate == today) raw.correctToday else 0,
+            reviewedToday = if (raw.lastActiveDate == today) raw.reviewedToday else 0,
             // Ein ausgelassener Tag beendet die Serie.
             streakDays = when (raw.lastActiveDate) {
                 today, LocalDate.now().minusDays(1).toString() -> raw.streakDays
@@ -177,6 +182,35 @@ class ProgressRepository(context: Context) {
                     prefs[Keys.perfect] = (prefs[Keys.perfect] ?: emptySet()) + lessonId
                 }
             }
+        }
+    }
+
+    /**
+     * Lernstand der beantworteten Wörter fortschreiben: richtig verlängert den
+     * Abstand, falsch holt das Wort schon morgen zurück.
+     */
+    suspend fun recordAnswers(
+        itemIds: List<String>,
+        correct: Boolean,
+        today: LocalDate = LocalDate.now()
+    ) {
+        if (itemIds.isEmpty()) return
+        store.edit { prefs ->
+            val stand = ReviewLogic.decode(prefs[Keys.itemReviews] ?: emptySet()).toMutableMap()
+
+            // Nur fällige Wörter zählen als "aufgefrischt".
+            val faellig = itemIds.count { id ->
+                stand[id]?.let { ReviewLogic.isDue(it, today) } ?: false
+            }
+
+            itemIds.forEach { id ->
+                stand[id] = ReviewLogic.afterAnswer(stand[id], id, correct, today)
+            }
+            prefs[Keys.itemReviews] = ReviewLogic.encode(stand.values)
+
+            val heute = (prefs[Keys.lastActive] ?: "") == today.toString()
+            val bisher = if (heute) prefs[Keys.reviewedToday] ?: 0 else 0
+            prefs[Keys.reviewedToday] = bisher + faellig
         }
     }
 

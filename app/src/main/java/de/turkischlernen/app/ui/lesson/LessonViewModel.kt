@@ -161,6 +161,7 @@ class LessonViewModel(
             }
             viewModelScope.launch {
                 itemIds.forEach { repository.clearMistake(it) }
+                repository.recordAnswers(itemIds, correct = true)
             }
         } else {
             mascotPhrase = MascotPhrases.pick(MascotPhrases.comfort, mascotPhrase, random)
@@ -175,6 +176,7 @@ class LessonViewModel(
             current?.let { repeatQueue.add(it) }
             viewModelScope.launch {
                 itemIds.forEach { repository.addMistake(it) }
+                repository.recordAnswers(itemIds, correct = false)
                 if (loseHeart) repository.loseHeart()
             }
         }

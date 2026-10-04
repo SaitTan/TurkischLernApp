@@ -28,6 +28,10 @@ data class UserProgress(
     val heartsUpdatedAt: Long = 0L,
     val unlimitedHearts: Boolean = true,
     val completedLessons: Set<String> = emptySet(),
+    /** Lernstand je Wort für das schlaue Wiederholen. */
+    val reviews: Map<String, ItemReview> = emptyMap(),
+    /** Heute aufgefrischte fällige Wörter. */
+    val reviewedToday: Int = 0,
     /** Gespielte Runden je Lektion – bestimmt Farbe, Freischaltung und Spielzeit. */
     val lessonRounds: Map<String, Int> = emptyMap(),
     val perfectLessons: Set<String> = emptySet(),
