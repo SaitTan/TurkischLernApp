@@ -2,7 +2,6 @@ package de.turkischlernen.app.ui.path
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -66,6 +65,9 @@ import de.turkischlernen.app.ui.rewards.ChestOverlay
 import de.turkischlernen.app.ui.theme.AppColors
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+
+/** Farbe der noch offenen Ring-Segmente am Knoten. */
+private val PendingRing = Color(0xFF3F4A52)
 
 /**
  * Der Lernpfad: Einheiten untereinander, Lektionen als große runde Knoten im
@@ -384,12 +386,6 @@ private fun LessonNode(
         label = "pulseValue"
     )
 
-    val ring by animateFloatAsState(
-        targetValue = LessonRounds.ringFraction(rounds),
-        animationSpec = tween(600),
-        label = "ring"
-    )
-
     Column(
         modifier
             .fillMaxWidth()
@@ -417,32 +413,29 @@ private fun LessonNode(
         Box(
             Modifier
                 .offset(x = offsetX)
-                .size(92.dp),
+                .size(104.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Ring um den Knoten: zeigt die geschafften Runden.
-            Canvas(Modifier.size(92.dp)) {
-                val strich = 7f * density
-                val rand = strich / 2f
-                drawArc(
-                    color = nodeColor.copy(alpha = 0.25f),
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = Offset(rand, rand),
-                    size = Size(size.width - strich, size.height - strich),
-                    style = Stroke(width = strich, cap = StrokeCap.Round)
-                )
-                if (ring > 0f) {
-                    drawArc(
-                        color = nodeColor,
-                        startAngle = -90f,
-                        sweepAngle = 360f * ring,
-                        useCenter = false,
-                        topLeft = Offset(rand, rand),
-                        size = Size(size.width - strich, size.height - strich),
-                        style = Stroke(width = strich, cap = StrokeCap.Round)
-                    )
+            // Ein Bogen je Runde, mit Luecken dazwischen – wie im Vorbild.
+            // Fertige Lektionen brauchen keinen Ring, da spricht die Farbe.
+            if (stage == NodeStage.OPEN || stage == NodeStage.IN_PROGRESS) {
+                Canvas(Modifier.size(96.dp)) {
+                    val strich = 7.dp.toPx()
+                    val rand = strich / 2f
+                    val segmente = LessonRounds.ROUNDS_PER_LESSON
+                    val luecke = 18f
+                    val schritt = 360f / segmente
+                    repeat(segmente) { index ->
+                        drawArc(
+                            color = if (index < rounds) nodeColor else PendingRing,
+                            startAngle = -90f + index * schritt + luecke / 2f,
+                            sweepAngle = schritt - luecke,
+                            useCenter = false,
+                            topLeft = Offset(rand, rand),
+                            size = Size(size.width - strich, size.height - strich),
+                            style = Stroke(width = strich, cap = StrokeCap.Round)
+                        )
+                    }
                 }
             }
 
